@@ -1,5 +1,8 @@
 package ni.edu.uam.nautaticket.util;
 
+import ni.edu.uam.nautaticket.model.Departamento;
+import ni.edu.uam.nautaticket.model.Rol;
+import ni.edu.uam.nautaticket.model.Usuario;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
@@ -27,12 +30,17 @@ public class HibernateUtil {
             );
         }
 
+
         return new Configuration()
                 .configure("hibernate.cfg.xml")
                 .setProperty("hibernate.connection.url", url)
                 .setProperty("hibernate.connection.username", usuario)
                 .setProperty("hibernate.connection.password", password)
+                .addAnnotatedClass(Departamento.class)
+                .addAnnotatedClass(Rol.class)
+                .addAnnotatedClass(Usuario.class)
                 .buildSessionFactory();
+
     }
 
     public static SessionFactory getSessionFactory() {
