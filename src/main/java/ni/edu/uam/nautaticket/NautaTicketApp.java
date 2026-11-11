@@ -13,7 +13,7 @@ public class NautaTicketApp extends Application {
 
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource(
-                        "/ni/edu/uam/nautaticket/login-view.fxml"
+                        "/ni/edu/uam/nautaticket/hello-view.fxml"
                 )
         );
 
