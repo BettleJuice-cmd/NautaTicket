@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="ni.edu.uam.nautaticket.controller.LoginController"
+      alignment="CENTER"
+      spacing="15"
+      prefWidth="450"
+      prefHeight="400"
+      style="-fx-padding: 30;">
+
+    <Label text="NautaTicket"
+           style="-fx-font-size: 28px; -fx-font-weight: bold;"/>
+
+    <Label text="Sistema de Gestión de Tickets TI"/>
+
+    <Label text="Inicio de sesión"
+           style="-fx-font-size: 18px;"/>
+
+    <TextField fx:id="txtCorreo"
+               promptText="Correo electrónico"
+               maxWidth="280"/>
+
+    <PasswordField fx:id="txtPassword"
+                   promptText="Contraseña"
+                   maxWidth="280"
+                   onAction="#iniciarSesion"/>
+
+    <Button text="Ingresar"
+            onAction="#iniciarSesion"
+            prefWidth="150"/>
+
+    <Label fx:id="lblMensaje"
+           wrapText="true"
+           alignment="CENTER"
+           maxWidth="350"/>
+
+</VBox>
