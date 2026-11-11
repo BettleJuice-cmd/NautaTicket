@@ -6,6 +6,7 @@ import ni.edu.uam.nautaticket.model.Rol;
 import ni.edu.uam.nautaticket.model.Usuario;
 import ni.edu.uam.nautaticket.model.EstadoTicket;
 import ni.edu.uam.nautaticket.model.AsignacionTicket;
+import ni.edu.uam.nautaticket.model.HistorialTicket;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
@@ -44,6 +45,7 @@ public class HibernateUtil {
                 .addAnnotatedClass(Usuario.class)
                 .addAnnotatedClass(EstadoTicket.class)
                 .addAnnotatedClass(AsignacionTicket.class)
+                .addAnnotatedClass(HistorialTicket.class)
                 .buildSessionFactory();
     }
 
