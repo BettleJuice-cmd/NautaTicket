@@ -6,7 +6,7 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import ni.edu.uam.nautaticket.dao.AsignacionTicketDAO.TicketFila;
+import ni.edu.uam.nautaticket.dao.AsignacionTicketDao.TicketFila;
 import ni.edu.uam.nautaticket.service.AtencionService;
 
 import java.time.format.DateTimeFormatter;
