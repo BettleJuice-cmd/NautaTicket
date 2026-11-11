@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="ni.edu.uam.nautaticket.controller.AdminController"
+      spacing="12"
+      prefWidth="950"
+      prefHeight="650"
+      style="-fx-padding: 20;">
+
+    <Label text="NautaTicket - Administración"
+           style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+
+    <Label fx:id="lblSesion"/>
+
+    <TabPane VBox.vgrow="ALWAYS">
+
+        <Tab text="Usuarios" closable="false">
+            <VBox spacing="12" style="-fx-padding: 15;">
+
+                <GridPane hgap="12" vgap="12">
+
+                    <Label text="Nombre:"
+                           GridPane.rowIndex="0"
+                           GridPane.columnIndex="0"/>
+
+                    <TextField fx:id="txtNombre"
+                               promptText="Nombre"
+                               GridPane.rowIndex="0"
+                               GridPane.columnIndex="1"/>
+
+                    <Label text="Apellido:"
+                           GridPane.rowIndex="0"
+                           GridPane.columnIndex="2"/>
+
+                    <TextField fx:id="txtApellido"
+                               promptText="Apellido"
+                               GridPane.rowIndex="0"
+                               GridPane.columnIndex="3"/>
+
+                    <Label text="Correo:"
+                           GridPane.rowIndex="1"
+                           GridPane.columnIndex="0"/>
+
+                    <TextField fx:id="txtCorreo"
+                               promptText="Correo electrónico"
+                               GridPane.rowIndex="1"
+                               GridPane.columnIndex="1"/>
+
+                    <Label text="Contraseña:"
+                           GridPane.rowIndex="1"
+                           GridPane.columnIndex="2"/>
+
+                    <PasswordField fx:id="txtPassword"
+                                   promptText="Nueva contraseña"
+                                   GridPane.rowIndex="1"
+                                   GridPane.columnIndex="3"/>
+
+                    <Label text="Rol:"
+                           GridPane.rowIndex="2"
+                           GridPane.columnIndex="0"/>
+
+                    <ComboBox fx:id="cbRol"
+                              prefWidth="180"
+                              GridPane.rowIndex="2"
+                              GridPane.columnIndex="1"/>
+
+                    <Label text="Departamento:"
+                           GridPane.rowIndex="2"
+                           GridPane.columnIndex="2"/>
+
+                    <ComboBox fx:id="cbDepartamento"
+                              prefWidth="180"
+                              GridPane.rowIndex="2"
+                              GridPane.columnIndex="3"/>
+
+                </GridPane>
+
+                <Label text="Al actualizar, deja la contraseña vacía para conservar la actual."
+                       wrapText="true"/>
+
+                <HBox spacing="10">
+                    <Button text="Registrar"
+                            onAction="#registrarUsuario"/>
+
+                    <Button text="Actualizar"
+                            onAction="#actualizarUsuario"/>
+
+                    <Button text="Desactivar"
+                            onAction="#desactivarUsuario"/>
+
+                    <Button text="Limpiar"
+                            onAction="#limpiarFormulario"/>
+                </HBox>
+
+                <TableView fx:id="tablaUsuarios"
+                           VBox.vgrow="ALWAYS"
+                           prefHeight="350">
+
+                    <columns>
+                        <TableColumn fx:id="colId"
+                                     text="ID" prefWidth="55"/>
+                        <TableColumn fx:id="colNombre"
+                                     text="Nombre" prefWidth="170"/>
+                        <TableColumn fx:id="colCorreo"
+                                     text="Correo" prefWidth="230"/>
+                        <TableColumn fx:id="colRol"
+                                     text="Rol" prefWidth="120"/>
+                        <TableColumn fx:id="colDepartamento"
+                                     text="Departamento" prefWidth="160"/>
+                        <TableColumn fx:id="colEstado"
+                                     text="Estado" prefWidth="90"/>
+                    </columns>
+
+                </TableView>
+
+            </VBox>
+        </Tab>
+
+        <Tab text="Departamentos" closable="false">
+            <VBox spacing="15" style="-fx-padding: 20;">
+
+                <Label text="Registrar departamento"
+                       style="-fx-font-size: 20px;"/>
+
+                <TextField fx:id="txtNombreDepartamento"
+                           promptText="Nombre del departamento"
+                           maxWidth="350"/>
+
+                <TextArea fx:id="txtDescripcionDepartamento"
+                          promptText="Descripción"
+                          prefRowCount="3"
+                          maxWidth="350"/>
+
+                <Button text="Guardar departamento"
+                        onAction="#crearDepartamento"/>
+
+                <Label text="Los departamentos registrados aparecerán en el selector de usuarios."
+                       wrapText="true"/>
+
+            </VBox>
+        </Tab>
+
+    </TabPane>
+
+    <Label fx:id="lblMensaje"
+           wrapText="true"/>
+
+</VBox>
