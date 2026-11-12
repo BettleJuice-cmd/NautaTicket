@@ -65,14 +65,12 @@ public class AtencionService {
                         "El ticket ya fue asignado.");
             }
 
-            AsignacionTicket asignacion =
-                    new AsignacionTicket(idTicket, idTecnico);
-
-            session.persist(asignacion);
+            Ticket ticket = session.getReference(Ticket.class, idTicket);
+            session.persist(new AsignacionTicket(ticket, tecnico));
 
             historialService.registrarCambioTecnico(
                     session,
-                    session.getReference(Ticket.class, idTicket),
+                    ticket,
                     tecnico,
                     null,
                     idTecnico
