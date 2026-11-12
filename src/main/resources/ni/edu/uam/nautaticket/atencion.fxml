@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="ni.edu.uam.nautaticket.controller.AtencionController"
+      spacing="12"
+      prefWidth="900"
+      prefHeight="650">
+
+    <padding>
+        <Insets top="18" right="18" bottom="18" left="18"/>
+    </padding>
+
+    <Label text="Atencion de tickets - FIFO"
+           style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="ID tecnico:"/>
+
+        <TextField fx:id="campoTecnico"
+                   promptText="ID del tecnico"
+                   prefWidth="150"/>
+
+        <Button text="Actualizar listas"
+                onAction="#actualizar"/>
+
+        <Button text="Tomar siguiente ticket FIFO"
+                onAction="#tomarSiguiente"/>
+    </HBox>
+
+    <Label text="Tickets pendientes"
+           style="-fx-font-weight: bold;"/>
+
+    <TableView fx:id="tablaPendientes"
+               prefHeight="180"
+               VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="columnaPendienteId"
+                         text="ID"
+                         prefWidth="65"/>
+
+            <TableColumn fx:id="columnaPendienteTitulo"
+                         text="Titulo"
+                         prefWidth="550"/>
+
+            <TableColumn fx:id="columnaPendienteFecha"
+                         text="Fecha de creacion"
+                         prefWidth="200"/>
+        </columns>
+    </TableView>
+
+    <Label text="Mis tickets asignados"
+           style="-fx-font-weight: bold;"/>
+
+    <TableView fx:id="tablaMisTickets"
+               prefHeight="180"
+               VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="columnaMioId"
+                         text="ID"
+                         prefWidth="65"/>
+
+            <TableColumn fx:id="columnaMioTitulo"
+                         text="Titulo"
+                         prefWidth="550"/>
+
+            <TableColumn fx:id="columnaMioEstado"
+                         text="Estado"
+                         prefWidth="200"/>
+        </columns>
+    </TableView>
+
+    <Label text="Solucion del ticket"/>
+
+    <TextArea fx:id="campoSolucion"
+              promptText="Describe la solucion aplicada"
+              prefRowCount="2"/>
+
+    <HBox spacing="10">
+        <Button text="Iniciar atencion"
+                onAction="#iniciar"/>
+
+        <Button text="Resolver ticket"
+                onAction="#resolver"/>
+    </HBox>
+
+    <Label fx:id="mensaje"
+           text="Introduce el ID del tecnico."
+           wrapText="true"/>
+
+</VBox>

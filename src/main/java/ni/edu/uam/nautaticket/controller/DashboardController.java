@@ -16,6 +16,7 @@ public class DashboardController {
     @FXML private Label pendientes;
     @FXML private Label enProceso;
     @FXML private Label resueltos;
+    @FXML private Label cerrados;
     private HistorialService historialService;
 
     @FXML
@@ -40,6 +41,7 @@ public class DashboardController {
             pendientes.setText(String.valueOf(totales.getOrDefault("PENDIENTE", 0L)));
             enProceso.setText(String.valueOf(totales.getOrDefault("EN_PROCESO", 0L)));
             resueltos.setText(String.valueOf(totales.getOrDefault("RESUELTO", 0L)));
+            cerrados.setText(String.valueOf(totales.getOrDefault("CERRADO", 0L)));
         } catch (RuntimeException ex) {
             Alert alerta = new Alert(Alert.AlertType.ERROR);
             alerta.setHeaderText("No se pudieron cargar las estadísticas");

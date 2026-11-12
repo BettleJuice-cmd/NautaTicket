@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="ni.edu.uam.nautaticket.controller.DashboardController" spacing="18">
+    <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
+    <Label text="Estadísticas de tickets" style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+    <Label text="Filtrar por fecha de creación y estado actual"/>
+    <FlowPane hgap="10" vgap="10">
+        <Label text="Desde"/>
+        <DatePicker fx:id="fechaDesde" accessibleText="Fecha de creación desde"/>
+        <Label text="Hasta"/>
+        <DatePicker fx:id="fechaHasta" accessibleText="Fecha de creación hasta"/>
+        <Label text="Estado"/>
+        <ComboBox fx:id="filtroEstado" accessibleText="Estado actual" prefWidth="145"/>
+    </FlowPane>
+    <HBox spacing="10">
+        <Button text="Aplicar" onAction="#actualizar"/>
+        <Button text="Limpiar" onAction="#limpiar"/>
+    </HBox>
+    <HBox spacing="30">
+        <VBox spacing="8"><Label text="Pendientes"/><Label fx:id="pendientes" text="—" style="-fx-font-size: 26px;"/></VBox>
+        <VBox spacing="8"><Label text="En proceso"/><Label fx:id="enProceso" text="—" style="-fx-font-size: 26px;"/></VBox>
+        <VBox spacing="8"><Label text="Resueltos"/><Label fx:id="resueltos" text="—" style="-fx-font-size: 26px;"/></VBox>
+        <VBox spacing="8"><Label text="Cerrados"/><Label fx:id="cerrados" text="—" style="-fx-font-size: 26px;"/></VBox>
+    </HBox>
+</VBox>

@@ -13,9 +13,15 @@ import java.util.Map;
 public class HistorialTicketDAO {
 
     private final SessionFactory sessionFactory;
+    private final Integer idSolicitante;
 
     public HistorialTicketDAO(SessionFactory sessionFactory) {
+        this(sessionFactory, null);
+    }
+
+    public HistorialTicketDAO(SessionFactory sessionFactory, Integer idSolicitante) {
         this.sessionFactory = sessionFactory;
+        this.idSolicitante = idSolicitante;
     }
 
     public void guardar(Session session, HistorialTicket movimiento) {
@@ -30,9 +36,10 @@ public class HistorialTicketDAO {
 
         StringBuilder hql = new StringBuilder("""
                 SELECT h FROM HistorialTicket h
-                JOIN FETCH h.ticket
+                JOIN FETCH h.ticket t
                 JOIN FETCH h.usuario
-                WHERE h.ticket = :ticket
+                WHERE t.idTicket = :ticket
+                  AND (:solicitante IS NULL OR t.idSolicitante = :solicitante)
                 """);
 
         if (desde != null) {
@@ -51,17 +58,13 @@ public class HistorialTicketDAO {
 
         try (Session session = sessionFactory.openSession()) {
 
-            var ticket = session.getReference(
-                    ni.edu.uam.nautaticket.model.Ticket.class,
-                    idTicket
-            );
-
             var query = session.createQuery(
                     hql.toString(),
                     HistorialTicket.class
             );
 
-            query.setParameter("ticket", ticket);
+            query.setParameter("ticket", idTicket);
+            query.setParameter("solicitante", idSolicitante, Integer.class);
 
             if (desde != null) {
                 query.setParameter("desde", desde.atStartOfDay());
@@ -107,6 +110,10 @@ public class HistorialTicketDAO {
             sql.append(" AND e.nombre = :estado");
         }
 
+        if (idSolicitante != null) {
+            sql.append(" AND t.id_solicitante = :solicitante");
+        }
+
         sql.append(" GROUP BY e.nombre");
 
         try (Session session = sessionFactory.openSession()) {
@@ -129,6 +136,10 @@ public class HistorialTicketDAO {
 
             if (estado != null && !estado.isBlank()) {
                 query.setParameter("estado", estado);
+            }
+
+            if (idSolicitante != null) {
+                query.setParameter("solicitante", idSolicitante);
             }
 
             Map<String, Long> totales = new HashMap<>();

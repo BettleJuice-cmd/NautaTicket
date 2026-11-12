@@ -1,10 +1,11 @@
 
 package ni.edu.uam.nautaticket.controller;
 
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import ni.edu.uam.nautaticket.dao.CategoriaDAO;
 import ni.edu.uam.nautaticket.dao.TicketDAO;
 import ni.edu.uam.nautaticket.model.Categoria;
@@ -38,6 +39,12 @@ public class TicketController {
 
     public TicketController(SessionFactory sessionFactory,
                             Integer idSolicitante) {
+        this(sessionFactory, idSolicitante, false);
+    }
+
+    public TicketController(SessionFactory sessionFactory,
+                            Integer idSolicitante,
+                            boolean administrarTickets) {
 
         if (sessionFactory == null) {
             throw new IllegalArgumentException(
@@ -50,7 +57,8 @@ public class TicketController {
         }
 
         this.ticketService =
-                new TicketService(new TicketDAO(sessionFactory));
+                new TicketService(new TicketDAO(
+                        sessionFactory, administrarTickets ? null : idSolicitante));
 
         this.categoriaDAO = new CategoriaDAO(sessionFactory);
         this.idSolicitante = idSolicitante;
@@ -59,24 +67,22 @@ public class TicketController {
     @FXML
     private void initialize() {
 
-        colId.setCellValueFactory(
-                new PropertyValueFactory<>("idTicket"));
+        colId.setCellValueFactory(data ->
+                new ReadOnlyObjectWrapper<>(data.getValue().getIdTicket()));
 
-        colTitulo.setCellValueFactory(
-                new PropertyValueFactory<>("titulo"));
+        colTitulo.setCellValueFactory(data ->
+                new ReadOnlyStringWrapper(data.getValue().getTitulo()));
 
         colCategoria.setCellValueFactory(data ->
-                new javafx.beans.property.SimpleStringProperty(
-                        data.getValue().getCategoria().getNombre()
-                ));
+                new ReadOnlyStringWrapper(data.getValue().getCategoria().getNombre()));
 
-        colEstado.setCellValueFactory(
-                new PropertyValueFactory<>("estado"));
+        colEstado.setCellValueFactory(data ->
+                new ReadOnlyStringWrapper(data.getValue().getEstado().getNombre()));
 
         colFecha.setCellValueFactory(data -> {
             LocalDateTime fecha = data.getValue().getFechaCreacion();
 
-            return new javafx.beans.property.SimpleStringProperty(
+            return new ReadOnlyStringWrapper(
                     fecha == null ? "" : fecha.format(formatoFecha)
             );
         });

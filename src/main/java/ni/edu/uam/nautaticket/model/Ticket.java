@@ -35,8 +35,9 @@ public class Ticket {
     @Column(name = "descripcion", nullable = false, columnDefinition = "TEXT")
     private String descripcion;
 
-    @Column(name = "estado", nullable = false, length = 20)
-    private String estado = "PENDIENTE";
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_estado", nullable = false)
+    private EstadoTicket estado;
 
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;
@@ -57,9 +58,6 @@ public class Ticket {
     public void antesDeGuardar() {
         if (fechaCreacion == null) {
             fechaCreacion = LocalDateTime.now();
-        }
-        if (estado == null) {
-            estado = "PENDIENTE";
         }
     }
 }

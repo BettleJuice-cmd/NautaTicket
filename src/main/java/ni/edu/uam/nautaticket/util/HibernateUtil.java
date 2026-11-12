@@ -1,15 +1,21 @@
+
 package ni.edu.uam.nautaticket.util;
 
 import ni.edu.uam.nautaticket.model.Departamento;
 import ni.edu.uam.nautaticket.model.Rol;
 import ni.edu.uam.nautaticket.model.Usuario;
+import ni.edu.uam.nautaticket.model.EstadoTicket;
+import ni.edu.uam.nautaticket.model.AsignacionTicket;
+import ni.edu.uam.nautaticket.model.Categoria;
+import ni.edu.uam.nautaticket.model.HistorialTicket;
+import ni.edu.uam.nautaticket.model.Ticket;
+
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
 public class HibernateUtil {
 
-    private static final SessionFactory sessionFactory =
-            crearSessionFactory();
+    private static SessionFactory sessionFactory;
 
     private static SessionFactory crearSessionFactory() {
 
@@ -30,25 +36,35 @@ public class HibernateUtil {
             );
         }
 
-
-        return new Configuration()
-                .configure("hibernate.cfg.xml")
+        return configuracionBase()
                 .setProperty("hibernate.connection.url", url)
                 .setProperty("hibernate.connection.username", usuario)
                 .setProperty("hibernate.connection.password", password)
+                .buildSessionFactory();
+    }
+
+    static Configuration configuracionBase() {
+        return new Configuration()
+                .configure("hibernate.cfg.xml")
                 .addAnnotatedClass(Departamento.class)
                 .addAnnotatedClass(Rol.class)
                 .addAnnotatedClass(Usuario.class)
-                .buildSessionFactory();
-
+                .addAnnotatedClass(EstadoTicket.class)
+                .addAnnotatedClass(Categoria.class)
+                .addAnnotatedClass(Ticket.class)
+                .addAnnotatedClass(AsignacionTicket.class)
+                .addAnnotatedClass(HistorialTicket.class);
     }
 
-    public static SessionFactory getSessionFactory() {
+    public static synchronized SessionFactory getSessionFactory() {
+        if (sessionFactory == null || sessionFactory.isClosed()) {
+            sessionFactory = crearSessionFactory();
+        }
         return sessionFactory;
     }
 
-    public static void cerrar() {
-        if (!sessionFactory.isClosed()) {
+    public static synchronized void cerrar() {
+        if (sessionFactory != null && !sessionFactory.isClosed()) {
             sessionFactory.close();
         }
     }
