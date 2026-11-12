@@ -14,7 +14,11 @@ public class AsignacionTicketDao {
     private final SessionFactory sessionFactory;
 
     public AsignacionTicketDao() {
-        this.sessionFactory = HibernateUtil.getSessionFactory();
+        this(HibernateUtil.getSessionFactory());
+    }
+
+    public AsignacionTicketDao(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
     }
 
     public record TicketFila(
@@ -79,6 +83,17 @@ public class AsignacionTicketDao {
         }
     }
 
+    public void bloquearColaParaAsignar(Session session) {
+        session.doWork(connection -> {
+            try (var statement = connection.createStatement()) {
+                // La consulta posterior al bloqueo debe ver el commit de la toma anterior.
+                statement.execute("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
+                // 0x4E415554 identifica a NautaTicket, y 1 a la cola FIFO.
+                statement.execute("SELECT pg_advisory_xact_lock(1312904532, 1)");
+            }
+        });
+    }
+
     public Integer buscarSiguienteFIFO(Session session) {
         String sql = """
                 SELECT t.id_ticket
@@ -96,15 +111,10 @@ public class AsignacionTicketDao {
                 ORDER BY t.fecha_creacion ASC,
                          t.id_ticket ASC
                 LIMIT 1
-                FOR UPDATE OF t SKIP LOCKED
+                FOR UPDATE OF t
                 """;
 
-        Object resultado = session.createNativeQuery(sql)
-                .uniqueResult();
-
-        return resultado == null
-                ? null
-                : ((Number) resultado).intValue();
+        return session.createNativeQuery(sql, Integer.class).uniqueResult();
     }
 
     private TicketFila convertirFila(Object[] fila) {

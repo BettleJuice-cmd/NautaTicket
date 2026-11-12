@@ -4,24 +4,29 @@ package ni.edu.uam.nautaticket.service;
 import ni.edu.uam.nautaticket.dao.AsignacionTicketDao;
 import ni.edu.uam.nautaticket.dao.AsignacionTicketDao.TicketFila;
 import ni.edu.uam.nautaticket.model.AsignacionTicket;
+import ni.edu.uam.nautaticket.model.Ticket;
+import ni.edu.uam.nautaticket.model.Usuario;
 import ni.edu.uam.nautaticket.util.HibernateUtil;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.function.Function;
 
 public class AtencionService {
 
     private final SessionFactory sessionFactory;
     private final AsignacionTicketDao dao;
+    private final HistorialService historialService;
 
     public AtencionService() {
-        this.sessionFactory = HibernateUtil.getSessionFactory();
-        this.dao = new AsignacionTicketDao();
+        this(HibernateUtil.getSessionFactory());
+    }
+
+    public AtencionService(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+        this.dao = new AsignacionTicketDao(sessionFactory);
+        this.historialService = new HistorialService(sessionFactory);
     }
 
     public List<TicketFila> listarPendientes() {
@@ -33,8 +38,9 @@ public class AtencionService {
     }
 
     public int tomarSiguienteTicket(int idTecnico) {
-        return ejecutarTransaccion(session -> {
-            validarTecnico(session, idTecnico);
+        return sessionFactory.fromTransaction(session -> {
+            dao.bloquearColaParaAsignar(session);
+            Usuario tecnico = buscarTecnicoActivo(session, idTecnico);
 
             Integer idTicket = dao.buscarSiguienteFIFO(session);
 
@@ -64,13 +70,12 @@ public class AtencionService {
 
             session.persist(asignacion);
 
-            registrarHistorial(
+            historialService.registrarCambioTecnico(
                     session,
-                    idTicket,
-                    idTecnico,
-                    "PENDIENTE",
-                    "PENDIENTE",
-                    "Ticket asignado al tecnico."
+                    session.getReference(Ticket.class, idTicket),
+                    tecnico,
+                    null,
+                    idTecnico
             );
 
             return idTicket;
@@ -78,20 +83,18 @@ public class AtencionService {
     }
 
     public void iniciarAtencion(int idTicket, int idTecnico) {
-        ejecutarTransaccion(session -> {
-            validarTecnico(session, idTecnico);
+        sessionFactory.inTransaction(session -> {
+            Usuario tecnico = buscarTecnicoActivo(session, idTecnico);
 
             int actualizados = session.createNativeMutationQuery("""
-                    UPDATE tickets
-                    SET id_estado = (
-                            SELECT id_estado
-                            FROM estados_ticket
-                            WHERE nombre = 'EN_PROCESO'
-                        ),
-                        estado = 'EN_PROCESO'
-                    WHERE id_ticket = :ticket
-                      AND id_tecnico = :tecnico
-                      AND estado = 'PENDIENTE'
+                    UPDATE tickets t
+                    SET id_estado = destino.id_estado
+                    FROM estados_ticket origen, estados_ticket destino
+                    WHERE t.id_ticket = :ticket
+                      AND t.id_tecnico = :tecnico
+                      AND t.id_estado = origen.id_estado
+                      AND origen.nombre = 'PENDIENTE'
+                      AND destino.nombre = 'EN_PROCESO'
                       AND EXISTS (
                           SELECT 1
                           FROM asignaciones_ticket a
@@ -109,16 +112,14 @@ public class AtencionService {
                         "No se puede iniciar la atencion del ticket.");
             }
 
-            registrarHistorial(
+            historialService.registrarCambioEstado(
                     session,
-                    idTicket,
-                    idTecnico,
+                    session.getReference(Ticket.class, idTicket),
+                    tecnico,
                     "PENDIENTE",
                     "EN_PROCESO",
                     "Inicio de atencion del ticket."
             );
-
-            return null;
         });
     }
 
@@ -132,31 +133,23 @@ public class AtencionService {
                     "Debes escribir la solucion del ticket.");
         }
 
-        ejecutarTransaccion(session -> {
-            validarTecnico(session, idTecnico);
+        String solucionRegistrada = solucion.trim();
+        sessionFactory.inTransaction(session -> {
+            Usuario tecnico = buscarTecnicoActivo(session, idTecnico);
 
             int actualizados = session.createNativeMutationQuery("""
-                    UPDATE tickets
-                    SET id_estado = (
-                            SELECT id_estado
-                            FROM estados_ticket
-                            WHERE nombre = 'RESUELTO'
-                        ),
-                        estado = 'RESUELTO',
+                    UPDATE tickets t
+                    SET id_estado = destino.id_estado,
                         solucion = :solucion,
                         fecha_resolucion = CURRENT_TIMESTAMP
-                    WHERE id_ticket = :ticket
-                      AND id_tecnico = :tecnico
-                      AND estado = 'EN_PROCESO'
-                      AND EXISTS (
-                          SELECT 1
-                          FROM asignaciones_ticket a
-                          WHERE a.id_ticket = :ticket
-                            AND a.id_tecnico = :tecnico
-                            AND a.fecha_fin IS NULL
-                      )
+                    FROM estados_ticket origen, estados_ticket destino
+                    WHERE t.id_ticket = :ticket
+                      AND t.id_tecnico = :tecnico
+                      AND t.id_estado = origen.id_estado
+                      AND origen.nombre = 'EN_PROCESO'
+                      AND destino.nombre = 'RESUELTO'
                     """)
-                    .setParameter("solucion", solucion.trim())
+                    .setParameter("solucion", solucionRegistrada)
                     .setParameter("ticket", idTicket)
                     .setParameter("tecnico", idTecnico)
                     .executeUpdate();
@@ -166,7 +159,7 @@ public class AtencionService {
                         "El ticket no esta en proceso o no pertenece al tecnico.");
             }
 
-            session.createNativeMutationQuery("""
+            int asignacionesCerradas = session.createNativeMutationQuery("""
                     UPDATE asignaciones_ticket
                     SET fecha_fin = CURRENT_TIMESTAMP
                     WHERE id_ticket = :ticket
@@ -177,77 +170,31 @@ public class AtencionService {
                     .setParameter("tecnico", idTecnico)
                     .executeUpdate();
 
-            registrarHistorial(
+            if (asignacionesCerradas != 1) {
+                throw new IllegalStateException(
+                        "La resolución requiere exactamente una asignación activa del técnico.");
+            }
+
+            historialService.registrarCambioEstado(
                     session,
-                    idTicket,
-                    idTecnico,
+                    session.getReference(Ticket.class, idTicket),
+                    tecnico,
                     "EN_PROCESO",
                     "RESUELTO",
-                    "Ticket resuelto: " + solucion.trim()
+                    "Ticket resuelto: " + solucionRegistrada
             );
-
-            return null;
         });
     }
 
-    private void validarTecnico(Session session, int idTecnico) {
-        Object resultado = session.createNativeQuery("""
-                SELECT COUNT(*)
-                FROM usuarios u
-                JOIN roles r ON r.id_rol = u.id_rol
-                WHERE u.id_usuario = :tecnico
-                  AND u.activo = TRUE
-                  AND r.nombre IN ('TECNICO', 'ADMIN')
-                """)
+    private Usuario buscarTecnicoActivo(Session session, int idTecnico) {
+        return session.createSelectionQuery("""
+                FROM Usuario u
+                WHERE u.id = :tecnico
+                  AND u.activo = true
+                  AND u.rol.nombre IN ('TECNICO', 'ADMIN')
+                """, Usuario.class)
                 .setParameter("tecnico", idTecnico)
-                .getSingleResult();
-
-        if (((Number) resultado).longValue() == 0) {
-            throw new IllegalArgumentException(
-                    "El usuario no es un tecnico activo.");
-        }
-    }
-
-    private void registrarHistorial(
-            Session session,
-            int idTicket,
-            int idTecnico,
-            String estadoAnterior,
-            String estadoNuevo,
-            String comentario
-    ) {
-        session.createNativeMutationQuery("""
-                INSERT INTO historial_tickets
-                (id_ticket, id_usuario, estado_anterior,
-                 estado_nuevo, comentario)
-                VALUES
-                (:ticket, :tecnico, :anterior, :nuevo, :comentario)
-                """)
-                .setParameter("ticket", idTicket)
-                .setParameter("tecnico", idTecnico)
-                .setParameter("anterior", estadoAnterior)
-                .setParameter("nuevo", estadoNuevo)
-                .setParameter("comentario", comentario)
-                .executeUpdate();
-    }
-
-    private <T> T ejecutarTransaccion(
-            Function<Session, T> operacion
-    ) {
-        try (Session session = sessionFactory.openSession()) {
-            Transaction transaccion = session.beginTransaction();
-
-            try {
-                T resultado = operacion.apply(session);
-                transaccion.commit();
-                return resultado;
-
-            } catch (RuntimeException e) {
-                if (transaccion.isActive()) {
-                    transaccion.rollback();
-                }
-                throw e;
-            }
-        }
+                .uniqueResultOptional()
+                .orElseThrow(() -> new IllegalArgumentException("El usuario no es un técnico activo."));
     }
 }
