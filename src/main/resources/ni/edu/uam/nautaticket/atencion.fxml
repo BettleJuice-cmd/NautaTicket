@@ -25,11 +25,16 @@
                    promptText="ID del tecnico"
                    prefWidth="150"/>
 
-        <Button text="Actualizar listas"
+        <Button fx:id="botonActualizar" text="Actualizar listas"
                 onAction="#actualizar"/>
 
-        <Button text="Tomar siguiente ticket FIFO"
+        <Button fx:id="botonTomar" text="Tomar siguiente ticket FIFO"
                 onAction="#tomarSiguiente"/>
+
+        <ProgressIndicator fx:id="progresoToma"
+                           accessibleText="Asignación FIFO en curso"
+                           prefWidth="22" prefHeight="22"
+                           maxWidth="22" maxHeight="22"/>
     </HBox>
 
     <Label text="Tickets pendientes"
@@ -81,10 +86,10 @@
               prefRowCount="2"/>
 
     <HBox spacing="10">
-        <Button text="Iniciar atencion"
+        <Button fx:id="botonIniciar" text="Iniciar atencion"
                 onAction="#iniciar"/>
 
-        <Button text="Resolver ticket"
+        <Button fx:id="botonResolver" text="Resolver ticket"
                 onAction="#resolver"/>
     </HBox>
 

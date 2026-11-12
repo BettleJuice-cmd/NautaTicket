@@ -102,6 +102,9 @@ public class PanelController {
             mensaje.setText("El rol actual no tiene acceso a esta pantalla.");
             return;
         }
+        if (vista == Vista.ATENCION && botonAtencion.isDisable()) {
+            return;
+        }
 
         try {
             FXMLLoader loader = new FXMLLoader(
@@ -127,6 +130,7 @@ public class PanelController {
             case AtencionController atencion -> {
                 atencion.setIdTecnico(usuario.getId());
                 atencion.setServicio(new AtencionService());
+                botonAtencion.disableProperty().bind(atencion.tomaEnCurso());
             }
             case HistorialController historial -> historial.setHistorialService(new HistorialService(
                     HibernateUtil.getSessionFactory(), soporte ? null : usuario.getId()));
