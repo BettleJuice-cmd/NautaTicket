@@ -117,10 +117,15 @@ class AtencionPostgresTest {
         assertEquals("RESUELTO", resuelto.getEstado().getNombre());
         assertEquals("Solución de prueba", resuelto.getSolucion());
         assertNotNull(resuelto.getFechaResolucion());
+        assertEquals(solicitante, resuelto.getSolicitante().getId());
+        assertEquals(tecnicoA, resuelto.getTecnico().getId());
         var asignaciones = sesiones.fromSession(session -> session.createSelectionQuery("""
-                FROM AsignacionTicket a WHERE a.idTicket = :ticket ORDER BY a.idAsignacion
+                SELECT a FROM AsignacionTicket a JOIN FETCH a.ticket JOIN FETCH a.tecnico
+                WHERE a.ticket.idTicket = :ticket ORDER BY a.idAsignacion
                 """, AsignacionTicket.class).setParameter("ticket", ticket).getResultList());
         assertEquals(2, asignaciones.size());
+        assertEquals(ticket, asignaciones.getLast().getTicket().getIdTicket());
+        assertEquals(tecnicoA, asignaciones.getLast().getTecnico().getId());
         assertEquals(LocalDateTime.parse("2026-01-01T11:00:00"), asignaciones.getFirst().getFechaFin());
         assertNotNull(asignaciones.getLast().getFechaFin());
 

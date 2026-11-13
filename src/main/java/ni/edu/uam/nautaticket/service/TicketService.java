@@ -28,9 +28,7 @@ public class TicketService {
         ticket.setTitulo(titulo.trim());
         ticket.setDescripcion(descripcion.trim());
         ticket.setCategoria(categoria);
-        ticket.setIdSolicitante(idSolicitante);
-
-        ticketDAO.guardar(ticket);
+        ticketDAO.guardar(ticket, idSolicitante);
     }
 
     public List<Ticket> listarTickets() {

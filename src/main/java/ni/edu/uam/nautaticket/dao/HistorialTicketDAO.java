@@ -39,7 +39,7 @@ public class HistorialTicketDAO {
                 JOIN FETCH h.ticket t
                 JOIN FETCH h.usuario
                 WHERE t.idTicket = :ticket
-                  AND (:solicitante IS NULL OR t.idSolicitante = :solicitante)
+                  AND (:solicitante IS NULL OR t.solicitante.id = :solicitante)
                 """);
 
         if (desde != null) {
