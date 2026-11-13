@@ -9,6 +9,8 @@ import java.util.Locale;
 
 public class AdministracionService {
 
+    private static final int LIMITE_NOMBRE_DEPARTAMENTO = 100;
+
     private final UsuarioDao usuarioDao = new UsuarioDao();
     private final DepartamentoDao departamentoDao = new DepartamentoDao();
     private final RolDao rolDao = new RolDao();
@@ -159,9 +161,16 @@ public class AdministracionService {
             );
         }
 
+        String nombreNormalizado = nombre.trim();
+        if (nombreNormalizado.codePointCount(0, nombreNormalizado.length()) > LIMITE_NOMBRE_DEPARTAMENTO) {
+            throw new IllegalArgumentException(
+                    "El nombre del departamento no puede superar " + LIMITE_NOMBRE_DEPARTAMENTO + " caracteres"
+            );
+        }
+
         departamentoDao.guardar(
                 new Departamento(
-                        nombre.trim(),
+                        nombreNormalizado,
                         descripcion == null ? "" : descripcion.trim()
                 )
         );

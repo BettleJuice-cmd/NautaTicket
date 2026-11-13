@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="ni.edu.uam.nautaticket.controller.TicketController"
+            prefWidth="950"
+            prefHeight="650">
+
+    <top>
+        <VBox spacing="10" style="-fx-background-color: #243447;">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+
+            <Label text="NautaTicket - Gestión de Tickets"
+                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+
+            <Label text="Registro y consulta de solicitudes de soporte"
+                   style="-fx-text-fill: #dce6f1;"/>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="15">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+
+            <GridPane hgap="12" vgap="12">
+
+                <Label text="Título:"
+                       GridPane.columnIndex="0"
+                       GridPane.rowIndex="0"/>
+
+                <TextField fx:id="txtTitulo"
+                           promptText="Ingrese el título del ticket"
+                           GridPane.columnIndex="1"
+                           GridPane.rowIndex="0"/>
+
+                <Label text="Categoría:"
+                       GridPane.columnIndex="0"
+                       GridPane.rowIndex="1"/>
+
+                <ComboBox fx:id="cmbCategoria"
+                          prefWidth="250"
+                          promptText="Seleccione una categoría"
+                          GridPane.columnIndex="1"
+                          GridPane.rowIndex="1"/>
+
+                <Label text="Descripción:"
+                       GridPane.columnIndex="0"
+                       GridPane.rowIndex="2"/>
+
+                <TextArea fx:id="txtDescripcion"
+                          promptText="Describa el problema"
+                          prefRowCount="4"
+                          wrapText="true"
+                          GridPane.columnIndex="1"
+                          GridPane.rowIndex="2"/>
+
+            </GridPane>
+
+            <HBox spacing="10">
+                <Button text="Registrar"
+                        onAction="#registrarTicket"/>
+
+                <Button text="Actualizar"
+                        onAction="#actualizarTicket"/>
+
+                <Button text="Eliminar"
+                        onAction="#eliminarTicket"/>
+
+                <Button text="Limpiar"
+                        onAction="#limpiarFormulario"/>
+            </HBox>
+
+            <Separator/>
+
+            <HBox spacing="12" alignment="CENTER_LEFT">
+                <Label text="Filtrar por categoría:"/>
+
+                <ComboBox fx:id="cmbFiltroCategoria"
+                          prefWidth="220"
+                          promptText="Todas las categorías"
+                          onAction="#filtrarTickets"/>
+
+                <Button text="Mostrar todos"
+                        onAction="#mostrarTodos"/>
+            </HBox>
+
+            <TableView fx:id="tablaTickets"
+                       VBox.vgrow="ALWAYS">
+
+                <columns>
+                    <TableColumn fx:id="colId"
+                                 text="ID"
+                                 prefWidth="60"/>
+
+                    <TableColumn fx:id="colTitulo"
+                                 text="Título"
+                                 prefWidth="200"/>
+
+                    <TableColumn fx:id="colCategoria"
+                                 text="Categoría"
+                                 prefWidth="150"/>
+
+                    <TableColumn fx:id="colEstado"
+                                 text="Estado"
+                                 prefWidth="120"/>
+
+                    <TableColumn fx:id="colFecha"
+                                 text="Fecha de creación"
+                                 prefWidth="180"/>
+                </columns>
+
+            </TableView>
+        </VBox>
+    </center>
+</BorderPane>

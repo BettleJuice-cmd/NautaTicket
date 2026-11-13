@@ -27,8 +27,12 @@ public class HistorialService {
     private final HistorialTicketDAO dao;
 
     public HistorialService(SessionFactory sessionFactory) {
+        this(sessionFactory, null);
+    }
+
+    public HistorialService(SessionFactory sessionFactory, Integer idSolicitante) {
         this.dao = new HistorialTicketDAO(
-                Objects.requireNonNull(sessionFactory)
+                Objects.requireNonNull(sessionFactory), idSolicitante
         );
     }
 

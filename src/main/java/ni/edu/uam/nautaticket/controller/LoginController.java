@@ -45,31 +45,17 @@ public class LoginController {
                 return;
             }
 
-            if ("ADMIN".equalsIgnoreCase(
-                    usuario.getRol().getNombre())) {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/ni/edu/uam/nautaticket/panel.fxml"));
+            Parent root = loader.load();
+            PanelController controller = loader.getController();
+            controller.iniciar(usuario);
 
-                FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource(
-                                "/ni/edu/uam/nautaticket/admin-view.fxml"
-                        )
-                );
-
-                Parent root = loader.load();
-
-                AdminController controller = loader.getController();
-                controller.establecerAdministrador(usuario);
-
-                Stage stage = (Stage) txtCorreo.getScene().getWindow();
-                stage.setScene(new Scene(root));
-                stage.setTitle("NautaTicket - Administración");
-                stage.centerOnScreen();
-
-            } else {
-                lblMensaje.setText(
-                        "Acceso correcto: " + usuario.getNombre() +
-                                ". Módulo de tickets pendiente de integración."
-                );
-            }
+            Stage stage = (Stage) txtCorreo.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.setTitle("NautaTicket");
+            stage.sizeToScene();
+            stage.centerOnScreen();
 
         } catch (Exception e) {
             lblMensaje.setText(
