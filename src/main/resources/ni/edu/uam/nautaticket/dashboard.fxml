@@ -19,7 +19,12 @@
     <HBox spacing="10">
         <Button text="Aplicar" onAction="#actualizar"/>
         <Button text="Limpiar" onAction="#limpiar"/>
+        <Button fx:id="botonReporte" text="Generar reporte PDF"
+                onAction="#generarReportePdf" disable="true"
+                accessibleText="Guardar reporte PDF con los filtros seleccionados"/>
     </HBox>
+    <Label fx:id="mensajeReporte" wrapText="true"
+           style="-fx-text-fill: #285578;"/>
     <HBox spacing="30">
         <VBox spacing="8"><Label text="Pendientes"/><Label fx:id="pendientes" text="—" style="-fx-font-size: 26px;"/></VBox>
         <VBox spacing="8"><Label text="En proceso"/><Label fx:id="enProceso" text="—" style="-fx-font-size: 26px;"/></VBox>
