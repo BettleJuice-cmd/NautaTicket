@@ -5,6 +5,13 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.Button;
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
+import javafx.concurrent.Task;
+
+import java.io.File;
+import java.time.LocalDate;
 import ni.edu.uam.nautaticket.service.HistorialService;
 
 import java.util.Map;
@@ -17,12 +24,18 @@ public class DashboardController {
     @FXML private Label enProceso;
     @FXML private Label resueltos;
     @FXML private Label cerrados;
+    @FXML private Button botonReporte;
+    @FXML private Label mensajeReporte;
     private HistorialService historialService;
+    private ReportePdfAction reportePdfAction;
+    private boolean generandoReporte;
 
     @FXML
     private void initialize() {
         filtroEstado.getItems().addAll("TODOS", "PENDIENTE", "EN_PROCESO", "RESUELTO", "CERRADO");
         filtroEstado.setValue("TODOS");
+        botonReporte.setDisable(true);
+        mensajeReporte.setText("Generación de PDF pendiente de integrar con ReporteService.");
     }
 
     // Invocar después de FXMLLoader.load() con la SessionFactory común del equipo.
@@ -49,6 +62,81 @@ public class DashboardController {
                     ? ex.getMessage() : "Revisa la conexión y vuelve a intentarlo.");
             alerta.showAndWait();
         }
+    }
+
+    /**
+     * Contrato de interfaz temporal. Carlos adaptará aquí su ReporteService
+     * cuando el equipo acuerde la firma real del método de exportación.
+     */
+    public void setReportePdfAction(ReportePdfAction action) {
+        this.reportePdfAction = action;
+        botonReporte.setDisable(action == null || generandoReporte);
+        mensajeReporte.setText(action == null
+                ? "Generación de PDF pendiente de integrar con ReporteService."
+                : "Reporte disponible: selecciona los filtros y genera el PDF.");
+    }
+
+    @FXML
+    private void generarReportePdf() {
+        if (reportePdfAction == null || generandoReporte) {
+            return;
+        }
+        final LocalDate desde = fechaDesde.getValue();
+        final LocalDate hasta = fechaHasta.getValue();
+        if (desde != null && hasta != null && desde.isAfter(hasta)) {
+            mostrarErrorReporte("La fecha inicial no puede ser posterior a la final.");
+            return;
+        }
+        final String estado = "TODOS".equals(filtroEstado.getValue())
+                ? null : filtroEstado.getValue();
+        Window ventana = botonReporte.getScene().getWindow();
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Guardar reporte de tickets");
+        chooser.setInitialFileName("NautaTicket-reporte.pdf");
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Documento PDF (*.pdf)", "*.pdf"));
+        File destino = chooser.showSaveDialog(ventana);
+        if (destino == null) return;
+
+        // Capturar todo el estado de la UI ANTES de iniciar el hilo de fondo.
+        final ReportePdfAction action = reportePdfAction;
+        Task<Void> tarea = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                action.generar(destino.toPath(), desde, hasta, estado);
+                return null;
+            }
+        };
+        generandoReporte = true;
+        botonReporte.setDisable(true);
+        mensajeReporte.setText("Generando reporte PDF...");
+        tarea.setOnSucceeded(e -> {
+            generandoReporte = false;
+            botonReporte.setDisable(reportePdfAction == null);
+            mensajeReporte.setText("Reporte guardado en: " + destino.getAbsolutePath());
+            Alert aviso = new Alert(Alert.AlertType.INFORMATION);
+            aviso.setHeaderText("Reporte generado correctamente");
+            aviso.setContentText("Se guardó el archivo PDF en la ubicación seleccionada.");
+            aviso.showAndWait();
+        });
+        tarea.setOnFailed(e -> {
+            generandoReporte = false;
+            botonReporte.setDisable(reportePdfAction == null);
+            System.getLogger(DashboardController.class.getName())
+                    .log(System.Logger.Level.ERROR, "Error al generar reporte PDF", tarea.getException());
+            mostrarErrorReporte("No se pudo generar el PDF. Comprueba los filtros y la ubicación de destino.");
+        });
+        Thread hilo = new Thread(tarea, "nautaticket-exportar-pdf");
+        hilo.setDaemon(true);
+        hilo.start();
+    }
+
+    private void mostrarErrorReporte(String texto) {
+        mensajeReporte.setText(texto);
+        Alert alerta = new Alert(Alert.AlertType.ERROR);
+        alerta.setHeaderText("No se pudo generar el reporte");
+        alerta.setContentText(texto);
+        alerta.showAndWait();
     }
 
     @FXML
