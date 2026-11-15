@@ -1,3 +1,4 @@
+
 module ni.edu.uam.nautaticket {
 
     requires javafx.controls;
@@ -10,8 +11,16 @@ module ni.edu.uam.nautaticket {
     requires jbcrypt;
     requires static lombok;
 
+    requires net.sf.jasperreports.core;
+    requires net.sf.jasperreports.pdf;
+    requires net.sf.jasperreports.jdt;
+
     exports ni.edu.uam.nautaticket to javafx.graphics;
     exports ni.edu.uam.nautaticket.util;
+
+    opens ni.edu.uam.nautaticket.dto
+            to net.sf.jasperreports.core;
+
     opens ni.edu.uam.nautaticket.controller to javafx.fxml;
     opens ni.edu.uam.nautaticket.model to org.hibernate.orm.core;
 }
