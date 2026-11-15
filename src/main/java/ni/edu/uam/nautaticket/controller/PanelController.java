@@ -134,8 +134,12 @@ public class PanelController {
             }
             case HistorialController historial -> historial.setHistorialService(new HistorialService(
                     HibernateUtil.getSessionFactory(), soporte ? null : usuario.getId()));
-            case DashboardController dashboard -> dashboard.setHistorialService(
-                    new HistorialService(HibernateUtil.getSessionFactory()));
+            case DashboardController dashboard -> {
+                dashboard.setHistorialService(
+                        new HistorialService(HibernateUtil.getSessionFactory())
+                );
+                dashboard.setApiDisponible(administrador);
+            }
             case TicketController tickets -> { }
             default -> throw new IllegalStateException("La pantalla no tiene un controlador válido.");
         }
