@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:id="raiz"
+      fx:controller="ni.edu.uam.nautaticket.controller.BienvenidaController"
+      alignment="CENTER" spacing="24"
+      prefWidth="900" prefHeight="540"
+      style="-fx-background-color: #F4F7FC; -fx-padding: 42;">
+
+    <Label text="NautaTicket"
+           style="-fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: #202B47;"/>
+    <Label text="Sistema de gestión de tickets de soporte TI"
+           style="-fx-font-size: 16px; -fx-text-fill: #54637D;"/>
+    <Label text="Selecciona tu perfil para continuar"
+           style="-fx-font-size: 19px; -fx-font-weight: bold; -fx-text-fill: #202B47;"/>
+
+    <HBox alignment="CENTER" spacing="18">
+        <VBox alignment="CENTER" spacing="15" prefWidth="245" prefHeight="205"
+              style="-fx-background-color: white; -fx-background-radius: 14; -fx-border-radius: 14; -fx-border-color: #E0E5EF; -fx-padding: 20;">
+            <Label text="Administrador" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #20365D;"/>
+            <Label text="Gestiona usuarios, departamentos y configuración"
+                   wrapText="true" textAlignment="CENTER" maxWidth="195"
+                   style="-fx-text-fill: #586781;"/>
+            <Button text="Ingresar como administrador" onAction="#elegirAdministrador"
+                    prefWidth="205" style="-fx-background-color: #274F96; -fx-text-fill: white; -fx-background-radius: 7;"/>
+        </VBox>
+        <VBox alignment="CENTER" spacing="15" prefWidth="245" prefHeight="205"
+              style="-fx-background-color: white; -fx-background-radius: 14; -fx-border-radius: 14; -fx-border-color: #E0E5EF; -fx-padding: 20;">
+            <Label text="Empleado" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #20365D;"/>
+            <Label text="Registra solicitudes y consulta el estado de tus tickets"
+                   wrapText="true" textAlignment="CENTER" maxWidth="195"
+                   style="-fx-text-fill: #586781;"/>
+            <Button text="Ingresar como empleado" onAction="#elegirEmpleado"
+                    prefWidth="205" style="-fx-background-color: #274F96; -fx-text-fill: white; -fx-background-radius: 7;"/>
+        </VBox>
+        <VBox alignment="CENTER" spacing="15" prefWidth="245" prefHeight="205"
+              style="-fx-background-color: white; -fx-background-radius: 14; -fx-border-radius: 14; -fx-border-color: #E0E5EF; -fx-padding: 20;">
+            <Label text="Personal TI" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #20365D;"/>
+            <Label text="Atiende tickets y gestiona su resolución"
+                   wrapText="true" textAlignment="CENTER" maxWidth="195"
+                   style="-fx-text-fill: #586781;"/>
+            <Button text="Ingresar como personal TI" onAction="#elegirPersonalTI"
+                    prefWidth="205" style="-fx-background-color: #274F96; -fx-text-fill: white; -fx-background-radius: 7;"/>
+        </VBox>
+    </HBox>
+
+    <Label fx:id="lblError" wrapText="true"
+           style="-fx-text-fill: #B33434; -fx-font-size: 13px;"/>
+</VBox>

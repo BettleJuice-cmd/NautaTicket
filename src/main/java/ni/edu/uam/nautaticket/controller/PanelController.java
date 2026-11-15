@@ -86,9 +86,13 @@ public class PanelController {
     @FXML
     private void cerrarSesion() {
         try {
-            NautaTicketApp.mostrarLogin((Stage) sesion.getScene().getWindow());
+            NautaTicketApp.mostrarBienvenida((Stage) sesion.getScene().getWindow());
+            usuario = null;
+            administrador = false;
+            soporte = false;
+            contenido.setContent(null);
         } catch (IOException e) {
-            mostrarError("No se pudo volver al inicio de sesión.", e);
+            mostrarError("No se pudo volver a la bienvenida.", e);
         }
     }
 

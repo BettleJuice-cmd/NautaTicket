@@ -8,7 +8,7 @@
       alignment="CENTER"
       spacing="15"
       prefWidth="450"
-      prefHeight="400"
+      prefHeight="420"
       style="-fx-padding: 30;">
 
     <Label text="NautaTicket"
@@ -19,6 +19,9 @@
     <Label text="Inicio de sesión"
            style="-fx-font-size: 18px;"/>
 
+    <Label fx:id="lblPerfil" text="Perfil sin seleccionar"
+           style="-fx-text-fill: #274F96; -fx-font-size: 14px; -fx-font-weight: bold;"/>
+
     <TextField fx:id="txtCorreo"
                promptText="Correo electrónico"
                maxWidth="280"/>
@@ -28,9 +31,10 @@
                    maxWidth="280"
                    onAction="#iniciarSesion"/>
 
-    <Button text="Ingresar"
-            onAction="#iniciarSesion"
-            prefWidth="150"/>
+    <HBox alignment="CENTER" spacing="12">
+        <Button text="Volver" onAction="#volver" prefWidth="120"/>
+        <Button text="Ingresar" onAction="#iniciarSesion" prefWidth="120"/>
+    </HBox>
 
     <Label fx:id="lblMensaje"
            wrapText="true"
