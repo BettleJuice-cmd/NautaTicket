@@ -1,6 +1,4 @@
-
 package ni.edu.uam.nautaticket;
-
 import javafx.application.Application;
 import javafx.concurrent.Worker;
 import javafx.scene.Scene;
@@ -15,7 +13,9 @@ import netscape.javascript.JSObject;
 import ni.edu.uam.nautaticket.bridge.WebAdminBridge;
 import ni.edu.uam.nautaticket.bridge.WebDashboardBridge;
 import ni.edu.uam.nautaticket.bridge.WebLoginBridge;
+import ni.edu.uam.nautaticket.bridge.WebTicketBridge;
 import ni.edu.uam.nautaticket.model.Usuario;
+import ni.edu.uam.nautaticket.util.HibernateUtil;
 
 import java.net.URI;
 import java.net.URL;
@@ -32,6 +32,7 @@ public class WebPreviewApp extends Application {
     private WebLoginBridge loginBridge;
     private WebDashboardBridge dashboardBridge;
     private WebAdminBridge adminBridge;
+    private WebTicketBridge ticketBridge;
 
     private Usuario usuarioAutenticado;
     private String perfilAutenticado;
@@ -202,9 +203,11 @@ public class WebPreviewApp extends Application {
             );
 
         } catch (Exception e) {
+
             System.err.println(
                     "[WEB] Error registrando login."
             );
+
             e.printStackTrace();
         }
     }
@@ -234,6 +237,9 @@ public class WebPreviewApp extends Application {
 
         try {
 
+            JSObject ventana = (JSObject)
+                    engine.executeScript("window");
+
             dashboardBridge = new WebDashboardBridge(
                     engine,
                     direccionActual,
@@ -241,9 +247,6 @@ public class WebPreviewApp extends Application {
                     perfilAutenticado,
                     this::cerrarSesion
             );
-
-            JSObject ventana = (JSObject)
-                    engine.executeScript("window");
 
             ventana.setMember(
                     "nautaDashboardBridge",
@@ -268,11 +271,29 @@ public class WebPreviewApp extends Application {
                 );
             }
 
+            ticketBridge = new WebTicketBridge(
+                    engine,
+                    direccionActual,
+                    usuarioAutenticado,
+                    HibernateUtil.getSessionFactory()
+            );
+
+            ventana.setMember(
+                    "nautaTicketBridge",
+                    ticketBridge
+            );
+
             engine.executeScript(
                     "if (typeof window.nautaDashboardReady " +
                             "=== 'function') {" +
                             "window.nautaDashboardReady();" +
                             "}"
+            );
+
+            cargarScriptTickets();
+
+            System.out.println(
+                    "[WEB] Módulo de tickets registrado."
             );
 
         } catch (Exception e) {
@@ -283,6 +304,28 @@ public class WebPreviewApp extends Application {
 
             e.printStackTrace();
         }
+    }
+
+    private void cargarScriptTickets() {
+
+        URL script = getClass().getResource(
+                "/web/js/tickets.js"
+        );
+
+        if (script == null) {
+            throw new IllegalStateException(
+                    "No se encontró /web/js/tickets.js"
+            );
+        }
+
+        String codigo =
+                "(function() {" +
+                        "const script = document.createElement('script');" +
+                        "script.src = 'js/tickets.js';" +
+                        "document.body.appendChild(script);" +
+                        "})();";
+
+        engine.executeScript(codigo);
     }
 
     private boolean esAdministrador() {
@@ -327,12 +370,17 @@ public class WebPreviewApp extends Application {
             adminBridge.desactivar();
         }
 
+        if (ticketBridge != null) {
+            ticketBridge.desactivar();
+        }
+
         usuarioAutenticado = null;
         perfilAutenticado = null;
 
         loginBridge = null;
         dashboardBridge = null;
         adminBridge = null;
+        ticketBridge = null;
     }
 
     private boolean haySesion() {
