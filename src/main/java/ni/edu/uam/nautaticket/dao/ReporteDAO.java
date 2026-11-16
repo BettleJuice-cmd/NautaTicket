@@ -21,8 +21,12 @@ public class ReporteDAO {
     public List<ReporteTicketDTO> obtenerTickets(
             LocalDate desde,
             LocalDate hasta,
-            String estado) {
+            String estado,
+            int usuarioId) {
 
+        if (usuarioId <= 0) {
+            throw new IllegalArgumentException("El usuario del reporte no es válido.");
+        }
         if (desde != null && hasta != null
                 && desde.isAfter(hasta)) {
             throw new IllegalArgumentException(
@@ -30,7 +34,24 @@ public class ReporteDAO {
             );
         }
 
-        StringBuilder hql = new StringBuilder("""
+        try (Session session = sessionFactory.openSession()) {
+            Usuario usuario = session.createSelectionQuery("""
+                    SELECT u FROM Usuario u JOIN FETCH u.rol
+                    WHERE u.id = :usuario AND u.activo = true
+                    """, Usuario.class)
+                    .setParameter("usuario", usuarioId)
+                    .uniqueResult();
+
+            if (usuario == null) {
+                throw new SecurityException("El usuario no puede generar reportes.");
+            }
+
+            String rol = usuario.getRol().getNombre();
+            if (!"ADMIN".equals(rol) && !"TECNICO".equals(rol)) {
+                throw new SecurityException("El usuario no puede generar reportes.");
+            }
+
+            StringBuilder hql = new StringBuilder("""
                 SELECT t FROM Ticket t
                 JOIN FETCH t.solicitante s
                 LEFT JOIN FETCH s.departamento
@@ -40,28 +61,42 @@ public class ReporteDAO {
                 WHERE 1 = 1
                 """);
 
-        if (desde != null) {
-            hql.append(" AND t.fechaCreacion >= :desde");
-        }
+            if ("TECNICO".equals(rol)) {
+                hql.append("""
+                        AND EXISTS (
+                            SELECT h.idHistorial FROM HistorialTicket h
+                            WHERE h.ticket = t
+                              AND h.usuario.id = :tecnico
+                              AND h.estadoAnterior = 'PENDIENTE'
+                              AND h.estadoNuevo = 'EN_PROCESO'
+                        )
+                        """);
+            }
 
-        if (hasta != null) {
-            hql.append(" AND t.fechaCreacion < :hasta");
-        }
+            if (desde != null) {
+                hql.append(" AND t.fechaCreacion >= :desde");
+            }
 
-        if (estado != null && !estado.isBlank()) {
-            hql.append(" AND t.estado.nombre = :estado");
-        }
+            if (hasta != null) {
+                hql.append(" AND t.fechaCreacion < :hasta");
+            }
 
-        hql.append(
-                " ORDER BY t.fechaCreacion ASC, t.idTicket ASC"
-        );
+            if (estado != null && !estado.isBlank()) {
+                hql.append(" AND t.estado.nombre = :estado");
+            }
 
-        try (Session session = sessionFactory.openSession()) {
+            hql.append(
+                    " ORDER BY t.fechaCreacion ASC, t.idTicket ASC"
+            );
 
             var query = session.createQuery(
                     hql.toString(),
                     Ticket.class
             );
+
+            if ("TECNICO".equals(rol)) {
+                query.setParameter("tecnico", usuarioId);
+            }
 
             if (desde != null) {
                 query.setParameter(

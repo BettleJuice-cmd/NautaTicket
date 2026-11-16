@@ -254,7 +254,8 @@ public class PanelController {
                 dashboard.setReportePdfAction(
                         (destino, desde, hasta, estado) -> {
                             ReporteService servicio = new ReporteService(
-                                    HibernateUtil.getSessionFactory()
+                                    HibernateUtil.getSessionFactory(),
+                                    usuario.getId()
                             );
 
 

@@ -8,9 +8,11 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.util.converter.LocalDateStringConverter;
 import ni.edu.uam.nautaticket.model.HistorialTicket;
 import ni.edu.uam.nautaticket.service.HistorialService;
 
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class HistorialController {
@@ -53,20 +55,42 @@ public class HistorialController {
     private void buscar() {
         movimientos.getItems().clear();
         try {
-            int id = Integer.parseInt(ticket.getText().trim());
+            String textoId = ticket.getText().trim();
+            Integer id = textoId.isEmpty() ? null : Integer.parseInt(textoId);
             String filtro = estado.getValue();
-            var resultados = historialService.historialPorTicket(
-                    id, desde.getValue(), hasta.getValue(), "TODOS".equals(filtro) ? null : filtro);
+            var resultados = historialService.buscar(
+                    id, leerFecha(desde, "desde"), leerFecha(hasta, "hasta"),
+                    "TODOS".equals(filtro) ? null : filtro);
             movimientos.getItems().setAll(resultados);
-            mensaje.setText(resultados.isEmpty() ? "No hay movimientos para el ticket y los filtros indicados." : "");
+            mensaje.setText(resultados.isEmpty() ? "No hay movimientos para los filtros indicados." : "");
         } catch (NumberFormatException e) {
-            mensaje.setText("Introduce un ID de ticket válido.");
+            mensaje.setText("El ID del ticket debe ser un número entero positivo.");
         } catch (IllegalArgumentException e) {
             mensaje.setText(e.getMessage());
         } catch (RuntimeException e) {
             mensaje.setText("No se pudo consultar el historial. Revisa la conexión e inténtalo de nuevo.");
             System.getLogger(HistorialController.class.getName())
                     .log(System.Logger.Level.ERROR, "Error al consultar el historial", e);
+        }
+    }
+
+    private LocalDate leerFecha(DatePicker selector, String nombre) {
+        String texto = selector.getEditor().getText().trim();
+        if (texto.isEmpty()) {
+            selector.setValue(null);
+            return null;
+        }
+        try {
+            var conversor = selector.getConverter();
+            LocalDate fecha = (conversor == null ? new LocalDateStringConverter() : conversor)
+                    .fromString(texto);
+            if (fecha == null) {
+                throw new IllegalArgumentException();
+            }
+            selector.setValue(fecha);
+            return fecha;
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("La fecha " + nombre + " no es válida.", e);
         }
     }
 
