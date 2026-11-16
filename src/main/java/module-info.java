@@ -19,11 +19,12 @@ module ni.edu.uam.nautaticket {
 
     exports ni.edu.uam.nautaticket to javafx.graphics;
     exports ni.edu.uam.nautaticket.util;
+    exports ni.edu.uam.nautaticket.dto;
 
     opens ni.edu.uam.nautaticket.dto
             to net.sf.jasperreports.core;
 
     opens ni.edu.uam.nautaticket.controller to javafx.fxml;
     opens ni.edu.uam.nautaticket.model to org.hibernate.orm.core;
-    opens ni.edu.uam.nautaticket.dto to com.fasterxml.jackson.databind;
+
 }

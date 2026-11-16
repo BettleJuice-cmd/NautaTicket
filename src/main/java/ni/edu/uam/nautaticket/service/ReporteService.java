@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -135,10 +136,17 @@ public class ReporteService {
                 Files.createDirectories(carpeta);
             }
 
-            JasperExportManager.exportReportToPdfFile(
-                    documento,
-                    archivo.toString()
-            );
+            // Publicar solamente un PDF completo; conservar el destino si falla.
+            Path temporal = Files.createTempFile(carpeta, ".nautaticket-", ".pdf");
+            try {
+                try (var salida = Files.newOutputStream(temporal)) {
+                    JasperExportManager.exportReportToPdfStream(documento, salida);
+                }
+                Files.move(temporal, archivo, StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
+            } finally {
+                Files.deleteIfExists(temporal);
+            }
 
             return archivo;
 
