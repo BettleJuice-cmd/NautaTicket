@@ -1,0 +1,46 @@
+:root {
+    /* Fondos negros */
+    --bg: #000000;
+    --surface: #0b0b0b;
+    --surface-raised: #121212;
+    --surface-hover: #1a1a1a;
+
+    /* Bordes neutros */
+    --border: #292929;
+    --border-soft: #1c1c1c;
+
+    /* Tipografía */
+    --text: #f2f2f2;
+    --muted: #999999;
+    --muted-light: #cccccc;
+
+    /* Identidad NautaTicket */
+    --purple: #8875d6;
+    --purple-hover: #a08feb;
+    --purple-soft: rgba(136, 117, 214, 0.13);
+
+    --blue: #7194d2;
+    --blue-soft: rgba(113, 148, 210, 0.12);
+
+    /* Estados */
+    --success: #79b89e;
+    --warning: #d7ae72;
+    --danger: #d7828e;
+
+    /* Componentes */
+    --radius-sm: 6px;
+    --radius-md: 9px;
+    --radius-lg: 12px;
+
+    --font: "IBM Plex Sans", "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", Consolas, monospace;
+
+    --transition: 160ms ease;
+}
+
+html,
+body {
+    margin: 0;
+    min-height: 100%;
+    background: #000000 !important;
+}
