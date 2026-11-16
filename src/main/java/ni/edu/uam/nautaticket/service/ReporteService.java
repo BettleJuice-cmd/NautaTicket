@@ -11,7 +11,6 @@ import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 
 import ni.edu.uam.nautaticket.dao.ReporteDAO;
 import ni.edu.uam.nautaticket.dto.ReporteTicketDTO;
-import ni.edu.uam.nautaticket.util.HibernateUtil;
 
 import org.hibernate.SessionFactory;
 
@@ -35,15 +34,16 @@ public class ReporteService {
             "/reports/reporte_tickets.jrxml";
 
     private final ReporteDAO reporteDAO;
+    private final int usuarioId;
 
-    public ReporteService() {
-        this(HibernateUtil.getSessionFactory());
-    }
-
-    public ReporteService(SessionFactory sessionFactory) {
+    public ReporteService(SessionFactory sessionFactory, int usuarioId) {
+        if (usuarioId <= 0) {
+            throw new IllegalArgumentException("El usuario del reporte no es válido.");
+        }
         this.reporteDAO = new ReporteDAO(
                 Objects.requireNonNull(sessionFactory)
         );
+        this.usuarioId = usuarioId;
     }
 
     public Path generarReporte(
@@ -71,7 +71,8 @@ public class ReporteService {
                 reporteDAO.obtenerTickets(
                         fechaDesde,
                         fechaHasta,
-                        estadoFiltro
+                        estadoFiltro,
+                        usuarioId
                 );
 
         Map<String, Long> totales = tickets.stream()
