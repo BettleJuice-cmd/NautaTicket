@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="dark">
-    <title>NautaTicket | Dashboard</title>
+    <title>NautaTicket | Panel principal</title>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
@@ -18,6 +18,7 @@
             --muted: #9b9ba3;
             --purple: #9783db;
             --purple-hover: #b0a0ec;
+            --blue: #7194d2;
             --font: "IBM Plex Sans", "Segoe UI", sans-serif;
             --mono: "IBM Plex Mono", Consolas, monospace;
         }
@@ -29,45 +30,51 @@
         html, body {
             margin: 0;
             min-height: 100%;
-            background: var(--bg);
+            background: #000000;
             color: var(--text);
             font-family: var(--font);
         }
 
-        button {
-            cursor: pointer;
+        button, input, select {
             font: inherit;
         }
 
-        button:focus-visible {
+        button {
+            cursor: pointer;
+        }
+
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
             outline: 2px solid var(--purple);
             outline-offset: 3px;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
         }
 
         [hidden] {
             display: none !important;
         }
 
-        /* Distribución principal */
-
         .workspace {
-            min-height: 100vh;
             display: grid;
             grid-template-columns: 250px minmax(0, 1fr);
+            min-height: 100vh;
             background: #000000;
         }
 
         .workspace-sidebar {
             min-height: 100vh;
-            padding: 25px 18px;
             display: flex;
             flex-direction: column;
-            gap: 39px;
+            gap: 32px;
+            padding: 24px 18px;
             background: #000000;
             border-right: 1px solid #242424;
         }
-
-        /* Logotipo */
 
         .logo {
             display: flex;
@@ -84,8 +91,6 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            border: none;
-            background: transparent;
         }
 
         .logo-mark img {
@@ -96,13 +101,10 @@
         }
 
         .logo-text {
-            color: var(--text);
             font-size: 20px;
             font-weight: 600;
             letter-spacing: -0.5px;
         }
-
-        /* Navegación */
 
         .workspace-nav {
             display: flex;
@@ -111,7 +113,7 @@
         }
 
         .nav-caption {
-            margin: 0 12px 13px;
+            margin: 12px 12px 10px;
             color: #777780;
             font-size: 10px;
             font-weight: 600;
@@ -126,22 +128,26 @@
             width: 100%;
             min-height: 43px;
             padding: 0 12px;
-            background: transparent;
             color: #a1a1ab;
+            background: transparent;
             border: 1px solid transparent;
             border-radius: 6px;
-            text-align: left;
             font-size: 13px;
             font-weight: 500;
+            text-align: left;
             transition: background 150ms, color 150ms;
         }
 
         .nav-item svg {
-            display: block;
             width: 17px;
             height: 17px;
             min-width: 17px;
             max-height: 17px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.7;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         .nav-item:hover {
@@ -150,30 +156,33 @@
         }
 
         .nav-item.active {
-            background: #1b1526;
             color: #c9baf4;
+            background: #1b1526;
             border-color: #392b4b;
         }
 
-        /* Usuario */
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 17px;
+            border-top: 1px solid #242424;
+        }
 
         .sidebar-user {
-            margin-top: auto;
-            padding: 18px 7px 0;
             display: flex;
             align-items: center;
             gap: 11px;
-            border-top: 1px solid #242424;
+            padding: 8px 7px 16px;
         }
 
         .user-avatar {
             width: 37px;
             height: 37px;
+            flex-shrink: 0;
             display: grid;
             place-items: center;
+            color: #c0b0f0;
             background: #292139;
             border-radius: 7px;
-            color: #c0b0f0;
             font-size: 13px;
             font-weight: 600;
         }
@@ -185,6 +194,9 @@
         .user-details strong,
         .user-details span {
             display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .user-details strong {
@@ -198,22 +210,26 @@
             font-size: 11px;
         }
 
-        /* Área principal */
+        .logout-button {
+            color: #b7b7bf;
+            border-top: 1px solid #242424;
+            border-radius: 0;
+            margin-top: 4px;
+            padding-top: 13px;
+        }
 
         .workspace-main {
             min-width: 0;
-            display: flex;
-            flex-direction: column;
             background: #000000;
         }
 
         .workspace-topbar {
             min-height: 68px;
-            padding: 0 38px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 15px;
+            padding: 0 38px;
             border-bottom: 1px solid #242424;
         }
 
@@ -243,8 +259,6 @@
             padding: 38px 42px;
         }
 
-        /* Encabezados */
-
         .page-heading {
             display: flex;
             align-items: flex-start;
@@ -267,8 +281,6 @@
             line-height: 1.6;
         }
 
-        /* Botones */
-
         .button {
             min-height: 42px;
             padding: 0 17px;
@@ -279,15 +291,23 @@
         }
 
         .button-primary {
-            background: var(--purple);
             color: #0b0910;
+            background: var(--purple);
         }
 
-        .button-primary:hover {
+        .button-primary:hover:not(:disabled) {
             background: var(--purple-hover);
         }
 
-        /* Indicadores */
+        .button-secondary {
+            color: #d9d9de;
+            background: #191919;
+            border-color: #343434;
+        }
+
+        .button-secondary:hover:not(:disabled) {
+            background: #242424;
+        }
 
         .metrics-grid {
             display: grid;
@@ -324,8 +344,6 @@
             font-size: 11px;
         }
 
-        /* Paneles */
-
         .content-panel {
             margin-top: 22px;
             overflow: hidden;
@@ -335,7 +353,11 @@
         }
 
         .panel-heading {
-            padding: 21px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 20px 22px;
             border-bottom: 1px solid #262626;
         }
 
@@ -350,8 +372,6 @@
             color: var(--muted);
             font-size: 12px;
         }
-
-        /* Tablas */
 
         .table-scroll {
             width: 100%;
@@ -380,12 +400,10 @@
 
         .empty-state {
             padding: 42px 20px !important;
-            text-align: center;
             color: var(--muted);
+            text-align: center;
             line-height: 1.7;
         }
-
-        /* Secciones adicionales */
 
         .simple-note {
             padding: 28px;
@@ -401,18 +419,89 @@
         }
 
         .simple-note p {
-            margin: 0;
             max-width: 580px;
+            margin: 0;
             color: var(--muted);
             font-size: 13px;
             line-height: 1.7;
         }
 
-        /* Diseño adaptable */
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab {
+            padding: 12px 17px;
+            color: var(--muted);
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-size: 12px;
+        }
+
+        .tab.active {
+            color: #c9baf4;
+            border-bottom-color: var(--purple);
+        }
+
+        .admin-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .admin-stat {
+            padding: 18px 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .admin-stat span {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .admin-stat strong {
+            display: block;
+            margin-top: 14px;
+            font-family: var(--mono);
+            font-size: 23px;
+            font-weight: 500;
+        }
+
+        .admin-info {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 15px;
+            margin-top: 18px;
+            background: #101010;
+            border: 1px solid #303030;
+            border-radius: 7px;
+            color: #b9b9c0;
+            font-size: 12px;
+            line-height: 1.65;
+        }
+
+        .admin-info svg {
+            width: 17px;
+            height: 17px;
+            flex-shrink: 0;
+            color: var(--blue);
+        }
 
         @media (max-width: 1100px) {
             .metrics-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .admin-summary {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
 
@@ -423,7 +512,7 @@
 
             .workspace-sidebar {
                 min-height: auto;
-                gap: 20px;
+                gap: 18px;
                 border-right: none;
                 border-bottom: 1px solid #242424;
             }
@@ -441,8 +530,8 @@
                 width: auto;
             }
 
-            .sidebar-user {
-                display: none;
+            .sidebar-footer {
+                margin-top: 0;
             }
 
             .workspace-content {
@@ -455,16 +544,19 @@
         }
 
         @media (max-width: 520px) {
-            .metrics-grid {
+            .metrics-grid,
+            .admin-summary {
                 grid-template-columns: 1fr;
             }
 
-            .page-heading {
+            .page-heading,
+            .panel-heading {
                 flex-direction: column;
+                align-items: flex-start;
             }
 
             .data-table {
-                min-width: 560px;
+                min-width: 580px;
             }
         }
     </style>
@@ -484,29 +576,18 @@
             <span class="logo-text">NautaTicket</span>
         </div>
 
-        <nav class="workspace-nav"
-             aria-label="Navegación principal">
+        <nav class="workspace-nav" aria-label="Navegación principal">
 
-            <p class="nav-caption">
-                Espacio de trabajo
-            </p>
+            <p class="nav-caption">Espacio de trabajo</p>
 
             <button class="nav-item active"
                     type="button"
-                    data-section="resumen"
-                    aria-current="page">
-                <svg viewBox="0 0 24 24"
-                     fill="none"
-                     stroke="currentColor"
-                     stroke-width="1.7">
-                    <rect x="3" y="3"
-                          width="8" height="8" rx="1"/>
-                    <rect x="13" y="3"
-                          width="8" height="8" rx="1"/>
-                    <rect x="3" y="13"
-                          width="8" height="8" rx="1"/>
-                    <rect x="13" y="13"
-                          width="8" height="8" rx="1"/>
+                    data-section="resumen">
+                <svg viewBox="0 0 24 24">
+                    <rect x="3" y="3" width="8" height="8" rx="1"/>
+                    <rect x="13" y="3" width="8" height="8" rx="1"/>
+                    <rect x="3" y="13" width="8" height="8" rx="1"/>
+                    <rect x="13" y="13" width="8" height="8" rx="1"/>
                 </svg>
                 Resumen
             </button>
@@ -514,24 +595,19 @@
             <button class="nav-item"
                     type="button"
                     data-section="tickets">
-                <svg viewBox="0 0 24 24"
-                     fill="none"
-                     stroke="currentColor"
-                     stroke-width="1.7">
+                <svg viewBox="0 0 24 24">
                     <path d="M4 4h16v5a3 3 0 0 0 0 6v5H4v-5a3 3 0 0 0 0-6V4Z"/>
-                    <path d="M12 4v16"
-                          stroke-dasharray="2 2"/>
+                    <path d="M12 4v16" stroke-dasharray="2 2"/>
                 </svg>
                 Tickets
             </button>
 
             <button class="nav-item"
                     type="button"
-                    data-section="atencion">
-                <svg viewBox="0 0 24 24"
-                     fill="none"
-                     stroke="currentColor"
-                     stroke-width="1.7">
+                    data-section="atencion"
+                    data-roles="Administrador,Soporte técnico"
+                    hidden>
+                <svg viewBox="0 0 24 24">
                     <circle cx="12" cy="12" r="8"/>
                     <path d="m8 12 3 3 5-6"/>
                 </svg>
@@ -540,11 +616,10 @@
 
             <button class="nav-item"
                     type="button"
-                    data-section="historial">
-                <svg viewBox="0 0 24 24"
-                     fill="none"
-                     stroke="currentColor"
-                     stroke-width="1.7">
+                    data-section="historial"
+                    data-roles="Administrador,Soporte técnico"
+                    hidden>
+                <svg viewBox="0 0 24 24">
                     <path d="M3 12a9 9 0 1 0 3-6.7"/>
                     <path d="M3 4v5h5M12 7v5l3 2"/>
                 </svg>
@@ -553,30 +628,61 @@
 
             <button class="nav-item"
                     type="button"
-                    data-section="reportes">
-                <svg viewBox="0 0 24 24"
-                     fill="none"
-                     stroke="currentColor"
-                     stroke-width="1.7">
+                    data-section="reportes"
+                    data-roles="Administrador"
+                    hidden>
+                <svg viewBox="0 0 24 24">
                     <path d="M6 3h9l4 4v14H6Z"/>
                     <path d="M15 3v5h4M9 13h7M9 17h7"/>
                 </svg>
                 Reportes
             </button>
 
+            <p class="nav-caption"
+               data-roles="Administrador"
+               hidden>
+                Configuración
+            </p>
+
+            <button class="nav-item"
+                    type="button"
+                    data-section="administracion"
+                    data-roles="Administrador"
+                    hidden>
+                <svg viewBox="0 0 24 24">
+                    <path d="M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M20 20v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                Administración
+            </button>
+
         </nav>
 
-        <div class="sidebar-user">
-            <span class="user-avatar">N</span>
+        <div class="sidebar-footer">
 
-            <div class="user-details">
-                <strong id="userName">
-                    Sin sesión conectada
-                </strong>
-                <span id="userRole">Vista previa</span>
+            <div class="sidebar-user">
+                <span class="user-avatar">N</span>
+                <div class="user-details">
+                    <strong id="userName">Sin sesión conectada</strong>
+                    <span id="userRole">Vista previa</span>
+                </div>
             </div>
-        </div>
 
+            <button class="nav-item logout-button"
+                    type="button"
+                    id="cerrarSesionBtn"
+                    hidden>
+                <svg viewBox="0 0 24 24">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <path d="M16 17l5-5-5-5"/>
+                    <path d="M21 12H9"/>
+                </svg>
+                Cerrar sesión
+            </button>
+
+        </div>
     </aside>
 
     <main class="workspace-main">
@@ -584,9 +690,7 @@
         <header class="workspace-topbar">
             <div class="workspace-path">
                 NautaTicket /
-                <strong id="currentSection">
-                    Resumen
-                </strong>
+                <strong id="currentSection">Resumen</strong>
             </div>
 
             <span class="role-tag" id="roleTag">
@@ -596,20 +700,13 @@
 
         <div class="workspace-content">
 
-            <!-- Resumen -->
-
-            <section id="resumen"
-                     class="workspace-section">
+            <section id="resumen" class="workspace-section">
 
                 <div class="page-heading">
                     <div>
                         <h1>Resumen general</h1>
-                        <p>
-                            Información general de las
-                            solicitudes de soporte.
-                        </p>
+                        <p>Información general de las solicitudes de soporte.</p>
                     </div>
-
                     <button class="button button-primary"
                             type="button"
                             data-go="tickets">
@@ -618,59 +715,37 @@
                 </div>
 
                 <div class="metrics-grid">
-
                     <article class="metric">
-                        <span class="metric-label">
-                            Total de tickets
-                        </span>
-                        <strong class="metric-value"
-                                id="totalTickets">—</strong>
-                        <span class="metric-hint">
-                            Sin datos conectados
-                        </span>
+                        <span class="metric-label">Total de tickets</span>
+                        <strong class="metric-value" id="totalTickets">—</strong>
+                        <span class="metric-hint">Sin datos conectados</span>
                     </article>
 
                     <article class="metric">
-                        <span class="metric-label">
-                            Pendientes
-                        </span>
-                        <strong class="metric-value"
-                                id="pendingTickets">—</strong>
-                        <span class="metric-hint">
-                            Por atender
-                        </span>
+                        <span class="metric-label">Pendientes</span>
+                        <strong class="metric-value" id="pendingTickets">—</strong>
+                        <span class="metric-hint">Por atender</span>
                     </article>
 
                     <article class="metric">
-                        <span class="metric-label">
-                            En atención
-                        </span>
-                        <strong class="metric-value"
-                                id="activeTickets">—</strong>
-                        <span class="metric-hint">
-                            En proceso
-                        </span>
+                        <span class="metric-label">En atención</span>
+                        <strong class="metric-value" id="activeTickets">—</strong>
+                        <span class="metric-hint">En proceso</span>
                     </article>
 
                     <article class="metric">
-                        <span class="metric-label">
-                            Resueltos
-                        </span>
-                        <strong class="metric-value"
-                                id="resolvedTickets">—</strong>
-                        <span class="metric-hint">
-                            Atención completada
-                        </span>
+                        <span class="metric-label">Resueltos</span>
+                        <strong class="metric-value" id="resolvedTickets">—</strong>
+                        <span class="metric-hint">Atención completada</span>
                     </article>
-
                 </div>
 
-                <section class="content-panel">
+                <div class="content-panel">
                     <div class="panel-heading">
-                        <h2>Solicitudes recientes</h2>
-                        <p>
-                            Últimos tickets registrados.
-                        </p>
+                        <div>
+                            <h2>Solicitudes recientes</h2>
+                            <p>Últimos tickets registrados.</p>
+                        </div>
                     </div>
 
                     <div class="table-scroll">
@@ -684,11 +759,9 @@
                                 <th>Fecha</th>
                             </tr>
                             </thead>
-
                             <tbody id="recentTickets">
                             <tr>
-                                <td colspan="5"
-                                    class="empty-state">
+                                <td colspan="5" class="empty-state">
                                     Los registros aparecerán cuando
                                     conectemos los servicios Java.
                                 </td>
@@ -696,116 +769,263 @@
                             </tbody>
                         </table>
                     </div>
-                </section>
-
+                </div>
             </section>
 
-            <!-- Tickets -->
-
-            <section id="tickets"
-                     class="workspace-section"
-                     hidden>
-
+            <section id="tickets" class="workspace-section" hidden>
                 <div class="page-heading">
                     <div>
                         <h1>Gestión de tickets</h1>
-                        <p>
-                            Registro y seguimiento
-                            de solicitudes.
-                        </p>
+                        <p>Registro y seguimiento de solicitudes.</p>
                     </div>
                 </div>
-
                 <div class="simple-note">
                     <h2>Módulo de tickets</h2>
                     <p>
-                        Aquí incorporaremos el formulario,
-                        las consultas y los filtros conectados
-                        a TicketService.
+                        Integraremos aquí el formulario de registro,
+                        las consultas y los filtros de TicketService.
                     </p>
                 </div>
-
             </section>
-
-            <!-- Atención -->
 
             <section id="atencion"
                      class="workspace-section"
+                     data-roles="Administrador,Soporte técnico"
                      hidden>
-
                 <div class="page-heading">
                     <div>
                         <h1>Atención de solicitudes</h1>
-                        <p>
-                            Gestión de tickets mediante FIFO.
-                        </p>
+                        <p>Gestión de tickets mediante FIFO.</p>
                     </div>
                 </div>
-
                 <div class="simple-note">
                     <h2>Centro de atención</h2>
                     <p>
-                        Esta sección se conectará al módulo
-                        Java de asignación y resolución.
+                        Aquí se integrarán las funciones de asignación,
+                        inicio de atención y resolución de tickets.
                     </p>
                 </div>
-
             </section>
-
-            <!-- Historial -->
 
             <section id="historial"
                      class="workspace-section"
+                     data-roles="Administrador,Soporte técnico"
                      hidden>
-
                 <div class="page-heading">
                     <div>
                         <h1>Historial</h1>
-                        <p>
-                            Registro de cambios en los tickets.
-                        </p>
+                        <p>Registro de cambios en los tickets.</p>
                     </div>
                 </div>
-
                 <div class="simple-note">
                     <h2>Historial de movimientos</h2>
                     <p>
-                        Mostraremos los cambios registrados
+                        Mostraremos aquí los cambios registrados
                         por el servicio de historial.
                     </p>
                 </div>
-
             </section>
-
-            <!-- Reportes -->
 
             <section id="reportes"
                      class="workspace-section"
+                     data-roles="Administrador"
+                     hidden>
+                <div class="page-heading">
+                    <div>
+                        <h1>Reportes</h1>
+                        <p>Generación de documentos PDF.</p>
+                    </div>
+                </div>
+                <div class="simple-note">
+                    <h2>Reportes PDF</h2>
+                    <p>
+                        Integraremos aquí la generación de reportes
+                        mediante ReporteService y JasperReports.
+                    </p>
+                </div>
+            </section>
+
+            <!-- ADMINISTRACIÓN -->
+
+            <section id="administracion"
+                     class="workspace-section"
+                     data-roles="Administrador"
                      hidden>
 
                 <div class="page-heading">
                     <div>
-                        <h1>Reportes</h1>
+                        <h1>Administración</h1>
                         <p>
-                            Generación de documentos PDF.
+                            Gestión de usuarios, roles y departamentos
+                            del sistema.
                         </p>
                     </div>
                 </div>
 
-                <div class="simple-note">
-                    <h2>Reportes PDF</h2>
-                    <p>
-                        Esta sección se conectará con
-                        ReporteService mediante JavaFX.
-                    </p>
+                <div class="admin-summary">
+                    <article class="admin-stat">
+                        <span>Usuarios registrados</span>
+                        <strong id="adminTotalUsuarios">—</strong>
+                    </article>
+
+                    <article class="admin-stat">
+                        <span>Usuarios activos</span>
+                        <strong id="adminUsuariosActivos">—</strong>
+                    </article>
+
+                    <article class="admin-stat">
+                        <span>Departamentos</span>
+                        <strong id="adminTotalDepartamentos">—</strong>
+                    </article>
                 </div>
 
+                <div class="admin-info">
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.8">
+                        <circle cx="12" cy="12" r="9"/>
+                        <path d="M12 11v6M12 7h.01"/>
+                    </svg>
+                    <span>
+                        La interfaz de administración ya está preparada.
+                        Las operaciones permanecerán deshabilitadas hasta
+                        conectarlas con AdministracionService y validar
+                        los permisos del administrador en Java.
+                    </span>
+                </div>
+
+                <div class="content-panel">
+
+                    <div class="panel-heading">
+                        <div>
+                            <h2>Directorio y configuración</h2>
+                            <p>
+                                Usuarios, roles y departamentos
+                                de NautaTicket.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style="padding: 0 22px;">
+
+                        <div class="tabs" role="tablist"
+                             aria-label="Áreas de administración">
+
+                            <button class="tab active"
+                                    id="tabUsuarios"
+                                    type="button"
+                                    role="tab"
+                                    aria-selected="true"
+                                    aria-controls="adminUsuarios"
+                                    data-admin-tab="usuarios">
+                                Usuarios
+                            </button>
+
+                            <button class="tab"
+                                    id="tabDepartamentos"
+                                    type="button"
+                                    role="tab"
+                                    aria-selected="false"
+                                    aria-controls="adminDepartamentos"
+                                    data-admin-tab="departamentos">
+                                Departamentos
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="adminUsuarios" role="tabpanel"
+                         aria-labelledby="tabUsuarios">
+
+                        <div class="panel-heading">
+                            <div>
+                                <h2>Usuarios del sistema</h2>
+                                <p>
+                                    Consulta y administración de cuentas.
+                                </p>
+                            </div>
+
+                            <button class="button button-primary"
+                                    id="nuevoUsuarioBtn"
+                                    type="button"
+                                    disabled>
+                                Nuevo usuario
+                            </button>
+                        </div>
+
+                        <div class="table-scroll">
+                            <table class="data-table">
+                                <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Usuario</th>
+                                    <th>Correo</th>
+                                    <th>Rol</th>
+                                    <th>Departamento</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                                </thead>
+                                <tbody id="adminUsuariosBody">
+                                <tr>
+                                    <td colspan="7" class="empty-state">
+                                        La lista de usuarios estará disponible
+                                        al conectar AdministracionService.
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="adminDepartamentos"
+                         role="tabpanel"
+                         aria-labelledby="tabDepartamentos"
+                         hidden>
+
+                        <div class="panel-heading">
+                            <div>
+                                <h2>Departamentos</h2>
+                                <p>
+                                    Gestión de áreas y departamentos.
+                                </p>
+                            </div>
+
+                            <button class="button button-primary"
+                                    id="nuevoDepartamentoBtn"
+                                    type="button"
+                                    disabled>
+                                Nuevo departamento
+                            </button>
+                        </div>
+
+                        <div class="table-scroll">
+                            <table class="data-table">
+                                <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Departamento</th>
+                                    <th>Acciones</th>
+                                </tr>
+                                </thead>
+
+                                <tbody id="adminDepartamentosBody">
+                                <tr>
+                                    <td colspan="3" class="empty-state">
+                                        Los departamentos aparecerán
+                                        al conectar el servicio Java.
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
             </section>
 
         </div>
-
     </main>
-
 </div>
 
 <script src="js/dashboard.js"></script>
