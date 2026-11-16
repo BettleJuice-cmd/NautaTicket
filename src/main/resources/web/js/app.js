@@ -1,32 +1,19 @@
-
 document.addEventListener("DOMContentLoaded", () => {
 
-    const profilesView =
-        document.getElementById("profilesView");
+    const profilesView = document.getElementById("profilesView");
+    const loginView = document.getElementById("loginView");
+    const profileLabel = document.getElementById("profileLabel");
 
-    const loginView =
-        document.getElementById("loginView");
+    const backBtn = document.getElementById("backBtn");
+    const loginForm = document.getElementById("loginForm");
 
-    const profileLabel =
-        document.getElementById("profileLabel");
+    const correo = document.getElementById("correo");
+    const password = document.getElementById("password");
+    const message = document.getElementById("message");
 
-    const backBtn =
-        document.getElementById("backBtn");
-
-    const loginForm =
-        document.getElementById("loginForm");
-
-    const correo =
-        document.getElementById("correo");
-
-    const password =
-        document.getElementById("password");
-
-    const message =
-        document.getElementById("message");
-
-    const submitBtn =
-        loginForm.querySelector('button[type="submit"]');
+    const submitBtn = loginForm.querySelector(
+        'button[type="submit"]'
+    );
 
     let selectedProfile = null;
     let procesando = false;
@@ -36,18 +23,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function establecerCarga(cargando) {
-
         procesando = cargando;
 
         submitBtn.disabled = cargando;
         backBtn.disabled = cargando;
 
-        submitBtn.textContent =
-            cargando ? "Verificando..." : "Ingresar";
+        submitBtn.textContent = cargando
+            ? "Verificando..."
+            : "Ingresar";
     }
 
     function mostrarLogin(perfil, nombre) {
-
         selectedProfile = perfil;
         profileLabel.textContent = nombre;
 
@@ -61,7 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function volver() {
-
         if (procesando) {
             return;
         }
@@ -75,23 +60,19 @@ document.addEventListener("DOMContentLoaded", () => {
         profilesView.hidden = false;
     }
 
-    document.querySelectorAll("[data-profile]")
-        .forEach(button => {
-
-            button.addEventListener("click", () => {
-
-                mostrarLogin(
-                    button.dataset.profile,
-                    button.dataset.label
-                );
-            });
+    document.querySelectorAll("[data-profile]").forEach(button => {
+        button.addEventListener("click", () => {
+            mostrarLogin(
+                button.dataset.profile,
+                button.dataset.label
+            );
         });
+    });
 
     backBtn.addEventListener("click", volver);
 
-    // Java invoca esta función si falla el acceso.
+    // Java puede invocar esta función para comunicar errores.
     window.nautaLoginError = function (texto) {
-
         establecerCarga(false);
         password.value = "";
 
@@ -116,7 +97,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const correoIngresado = correo.value.trim();
 
         if (!correoIngresado || !correo.checkValidity()) {
-
             mostrarMensaje(
                 "Ingresa un correo electrónico válido."
             );
@@ -124,21 +104,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (!password.value) {
-
-            mostrarMensaje(
-                "Ingresa tu contraseña."
-            );
+            mostrarMensaje("Ingresa tu contraseña.");
             return;
         }
 
-        if (!window.nautaBridge ||
-            typeof window.nautaBridge.iniciarSesion !== "function") {
+        const puente = window.nautaBridge;
 
+        if (!puente) {
             password.value = "";
 
             mostrarMensaje(
-                "Para iniciar sesión, abre NautaTicket " +
-                "desde la aplicación JavaFX."
+                "No se detectó la conexión con JavaFX."
             );
             return;
         }
@@ -148,22 +124,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
 
-            window.nautaBridge.iniciarSesion(
+            // Este método pertenece a WebLoginBridge.java.
+            puente.iniciarSesion(
                 correoIngresado,
                 password.value,
                 selectedProfile
             );
 
-            // No conservar la contraseña en el formulario.
             password.value = "";
 
         } catch (error) {
+
+            const detalle = String(error);
+
+            // WebPreviewApp muestra este aviso
+            // en la consola de IntelliJ mediante setOnAlert.
+            window.alert(
+                "Error al invocar WebLoginBridge: " + detalle
+            );
 
             password.value = "";
             establecerCarga(false);
 
             mostrarMensaje(
-                "No fue posible comunicarse con NautaTicket."
+                "No se pudo comunicar el formulario " +
+                "con el servicio Java."
             );
         }
     });

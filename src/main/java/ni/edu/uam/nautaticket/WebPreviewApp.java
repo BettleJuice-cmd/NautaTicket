@@ -11,26 +11,30 @@ import javafx.stage.Stage;
 
 import netscape.javascript.JSObject;
 
-import ni.edu.uam.nautaticket.util.HibernateUtil;
+import ni.edu.uam.nautaticket.bridge.WebLoginBridge;
 
+import java.net.URI;
 import java.net.URL;
+import java.nio.file.Path;
 
 public class WebPreviewApp extends Application {
 
-    private ni.edu.uam.nautaticket.WebLoginBridge loginBridge;
+    private WebLoginBridge loginBridge;
 
     @Override
     public void start(Stage stage) {
 
-        URL pagina = WebPreviewApp.class.getResource(
+        URL recurso = WebPreviewApp.class.getResource(
                 "/web/index.html"
         );
 
-        if (pagina == null) {
+        if (recurso == null) {
             throw new IllegalStateException(
                     "No se encontró /web/index.html"
             );
         }
+
+        String direccionPermitida = recurso.toExternalForm();
 
         WebView webView = new WebView();
         webView.setContextMenuEnabled(false);
@@ -38,12 +42,10 @@ public class WebPreviewApp extends Application {
         WebEngine engine = webView.getEngine();
         engine.setJavaScriptEnabled(true);
 
-        String direccion = pagina.toExternalForm();
-
-        loginBridge = new ni.edu.uam.nautaticket.WebLoginBridge(
-                engine,
-                stage,
-                direccion
+        engine.setOnAlert(event ->
+                System.out.println(
+                        "[WEB] " + event.getData()
+                )
         );
 
         engine.getLoadWorker()
@@ -52,41 +54,54 @@ public class WebPreviewApp extends Application {
 
                     if (nuevo == Worker.State.SUCCEEDED) {
 
-                        if (!direccion.equals(engine.getLocation())) {
+                        String direccionActual =
+                                engine.getLocation();
+
+                        System.out.println(
+                                "[WEB] Página cargada: "
+                                        + direccionActual
+                        );
+
+                        if (!esPaginaPermitida(
+                                direccionPermitida,
+                                direccionActual
+                        )) {
+
+                            System.err.println(
+                                    "[WEB] Página no autorizada."
+                            );
+
                             return;
                         }
 
-                        JSObject ventana = (JSObject)
-                                engine.executeScript("window");
-
-                        ventana.setMember(
-                                "nautaBridge",
-                                loginBridge
-                        );
-
-                        System.out.println(
-                                "Interfaz Web de NautaTicket lista."
+                        registrarPuente(
+                                engine,
+                                stage,
+                                direccionActual
                         );
                     }
 
                     if (nuevo == Worker.State.FAILED) {
 
                         System.err.println(
-                                "No se pudo cargar la interfaz."
+                                "[WEB] Error al cargar la página."
                         );
 
-                        if (engine.getLoadWorker()
-                                .getException() != null) {
+                        Throwable error =
+                                engine.getLoadWorker()
+                                        .getException();
 
-                            engine.getLoadWorker()
-                                    .getException()
-                                    .printStackTrace();
+                        if (error != null) {
+                            error.printStackTrace();
                         }
                     }
                 });
 
         StackPane root = new StackPane(webView);
-        root.setStyle("-fx-background-color: #000000;");
+
+        root.setStyle(
+                "-fx-background-color: #000000;"
+        );
 
         Scene scene = new Scene(
                 root,
@@ -101,14 +116,103 @@ public class WebPreviewApp extends Application {
         stage.setScene(scene);
         stage.centerOnScreen();
 
-        engine.load(direccion);
-
         stage.show();
+
+        engine.load(direccionPermitida);
     }
 
-    @Override
-    public void stop() {
-        HibernateUtil.cerrar();
+    private boolean esPaginaPermitida(
+            String direccionEsperada,
+            String direccionActual
+    ) {
+
+        try {
+
+            URI uriEsperada =
+                    URI.create(direccionEsperada);
+
+            URI uriActual =
+                    URI.create(direccionActual);
+
+            if (!"file".equalsIgnoreCase(
+                    uriEsperada.getScheme()
+            )) {
+                return false;
+            }
+
+            if (!"file".equalsIgnoreCase(
+                    uriActual.getScheme()
+            )) {
+                return false;
+            }
+
+            Path rutaEsperada =
+                    Path.of(uriEsperada)
+                            .toRealPath();
+
+            Path rutaActual =
+                    Path.of(uriActual)
+                            .toRealPath();
+
+            return rutaEsperada.equals(rutaActual);
+
+        } catch (Exception e) {
+
+            System.err.println(
+                    "[WEB] No se pudo verificar la página: "
+                            + e.getMessage()
+            );
+
+            return false;
+        }
+    }
+
+    private void registrarPuente(
+            WebEngine engine,
+            Stage stage,
+            String direccionActual
+    ) {
+
+        try {
+
+            loginBridge = new WebLoginBridge(
+                    engine,
+                    stage,
+                    direccionActual
+            );
+
+            JSObject ventana = (JSObject)
+                    engine.executeScript("window");
+
+            ventana.setMember(
+                    "nautaBridge",
+                    loginBridge
+            );
+
+            Object tipo = engine.executeScript(
+                    "typeof window.nautaBridge"
+            );
+
+            Object disponible = engine.executeScript(
+                    "window.nautaBridge != null"
+            );
+
+            System.out.println(
+                    "[WEB] Tipo de puente: " + tipo
+            );
+
+            System.out.println(
+                    "[WEB] Puente registrado: " + disponible
+            );
+
+        } catch (Exception e) {
+
+            System.err.println(
+                    "[WEB] Error registrando el puente Java."
+            );
+
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {

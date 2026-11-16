@@ -23,6 +23,12 @@ module ni.edu.uam.nautaticket {
     exports ni.edu.uam.nautaticket
             to javafx.graphics, javafx.web;
 
+    exports ni.edu.uam.nautaticket.bridge
+            to javafx.web;
+
+    opens ni.edu.uam.nautaticket.bridge
+            to javafx.web;
+
     exports ni.edu.uam.nautaticket.util;
     exports ni.edu.uam.nautaticket.dto;
 
