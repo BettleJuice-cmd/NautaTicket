@@ -1,4 +1,5 @@
 package ni.edu.uam.nautaticket;
+
 import javafx.application.Application;
 import javafx.concurrent.Worker;
 import javafx.scene.Scene;
@@ -7,11 +8,12 @@ import javafx.scene.paint.Color;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
-
 import netscape.javascript.JSObject;
 
 import ni.edu.uam.nautaticket.bridge.WebAdminBridge;
+import ni.edu.uam.nautaticket.bridge.WebAtencionBridge;
 import ni.edu.uam.nautaticket.bridge.WebDashboardBridge;
+import ni.edu.uam.nautaticket.bridge.WebHistorialBridge;
 import ni.edu.uam.nautaticket.bridge.WebLoginBridge;
 import ni.edu.uam.nautaticket.bridge.WebTicketBridge;
 import ni.edu.uam.nautaticket.model.Usuario;
@@ -20,8 +22,13 @@ import ni.edu.uam.nautaticket.util.HibernateUtil;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class WebPreviewApp extends Application {
+
+    private static final Logger LOGGER =
+            Logger.getLogger(WebPreviewApp.class.getName());
 
     private WebEngine engine;
     private Stage stage;
@@ -33,6 +40,8 @@ public class WebPreviewApp extends Application {
     private WebDashboardBridge dashboardBridge;
     private WebAdminBridge adminBridge;
     private WebTicketBridge ticketBridge;
+    private WebAtencionBridge atencionBridge;
+    private WebHistorialBridge historialBridge;
 
     private Usuario usuarioAutenticado;
     private String perfilAutenticado;
@@ -66,9 +75,7 @@ public class WebPreviewApp extends Application {
         engine.setJavaScriptEnabled(true);
 
         engine.setOnAlert(event ->
-                System.out.println(
-                        "[WEB] " + event.getData()
-                )
+                LOGGER.info("[WEB] " + event.getData())
         );
 
         engine.getLoadWorker()
@@ -80,18 +87,11 @@ public class WebPreviewApp extends Application {
                     }
 
                     if (nuevo == Worker.State.FAILED) {
-
-                        System.err.println(
-                                "[WEB] Error cargando la interfaz."
+                        LOGGER.log(
+                                Level.SEVERE,
+                                "Error cargando la interfaz HTML",
+                                engine.getLoadWorker().getException()
                         );
-
-                        Throwable error = engine
-                                .getLoadWorker()
-                                .getException();
-
-                        if (error != null) {
-                            error.printStackTrace();
-                        }
                     }
                 });
 
@@ -116,8 +116,8 @@ public class WebPreviewApp extends Application {
 
                     if (!login && !dashboard) {
 
-                        System.err.println(
-                                "[WEB] Navegación no permitida."
+                        LOGGER.warning(
+                                "Navegación no permitida: " + nueva
                         );
 
                         limpiarSesion();
@@ -148,31 +148,22 @@ public class WebPreviewApp extends Application {
 
     private void paginaCargada() {
 
-        String direccionActual = engine.getLocation();
+        String direccion = engine.getLocation();
 
-        if (esMismaPagina(paginaLogin, direccionActual)) {
-
+        if (esMismaPagina(paginaLogin, direccion)) {
             limpiarSesion();
-            registrarLogin(direccionActual);
+            registrarLogin(direccion);
             return;
         }
 
-        if (esMismaPagina(
-                paginaDashboard,
-                direccionActual
-        )) {
+        if (esMismaPagina(paginaDashboard, direccion)) {
 
             if (!haySesion()) {
-
-                System.err.println(
-                        "[WEB] Dashboard sin autenticación."
-                );
-
                 abrirLogin();
                 return;
             }
 
-            registrarDashboard(direccionActual);
+            registrarDashboard(direccion);
             return;
         }
 
@@ -180,13 +171,13 @@ public class WebPreviewApp extends Application {
         abrirLogin();
     }
 
-    private void registrarLogin(String direccionActual) {
+    private void registrarLogin(String direccion) {
 
         try {
 
             loginBridge = new WebLoginBridge(
                     engine,
-                    direccionActual,
+                    direccion,
                     this::autenticacionCorrecta
             );
 
@@ -198,17 +189,15 @@ public class WebPreviewApp extends Application {
                     loginBridge
             );
 
-            System.out.println(
-                    "[WEB] Puente de login registrado."
-            );
+            LOGGER.info("Puente de login registrado.");
 
         } catch (Exception e) {
 
-            System.err.println(
-                    "[WEB] Error registrando login."
+            LOGGER.log(
+                    Level.SEVERE,
+                    "No se pudo registrar el login",
+                    e
             );
-
-            e.printStackTrace();
         }
     }
 
@@ -224,25 +213,24 @@ public class WebPreviewApp extends Application {
         usuarioAutenticado = usuario;
         perfilAutenticado = perfil;
 
-        System.out.println(
-                "[WEB] Usuario autenticado correctamente."
-        );
+        LOGGER.info("Usuario autenticado correctamente.");
 
         abrirDashboard();
     }
 
-    private void registrarDashboard(
-            String direccionActual
-    ) {
+    private void registrarDashboard(String direccion) {
 
         try {
+
+            // Invalidar puentes anteriores.
+            desactivarPuentes();
 
             JSObject ventana = (JSObject)
                     engine.executeScript("window");
 
             dashboardBridge = new WebDashboardBridge(
                     engine,
-                    direccionActual,
+                    direccion,
                     usuarioAutenticado.getCorreo(),
                     perfilAutenticado,
                     this::cerrarSesion
@@ -257,7 +245,7 @@ public class WebPreviewApp extends Application {
 
                 adminBridge = new WebAdminBridge(
                         engine,
-                        direccionActual,
+                        direccion,
                         usuarioAutenticado
                 );
 
@@ -265,15 +253,11 @@ public class WebPreviewApp extends Application {
                         "nautaAdminBridge",
                         adminBridge
                 );
-
-                System.out.println(
-                        "[WEB] Administración disponible."
-                );
             }
 
             ticketBridge = new WebTicketBridge(
                     engine,
-                    direccionActual,
+                    direccion,
                     usuarioAutenticado,
                     HibernateUtil.getSessionFactory()
             );
@@ -283,6 +267,42 @@ public class WebPreviewApp extends Application {
                     ticketBridge
             );
 
+            if (esTecnico()) {
+
+                atencionBridge = new WebAtencionBridge(
+                        engine,
+                        direccion,
+                        usuarioAutenticado
+                );
+
+                ventana.setMember(
+                        "nautaAtencionBridge",
+                        atencionBridge
+                );
+
+                LOGGER.info(
+                        "Atención FIFO habilitada para técnico TI."
+                );
+            }
+
+            if (esAdministrador() || esTecnico()) {
+
+                historialBridge = new WebHistorialBridge(
+                        engine,
+                        direccion,
+                        usuarioAutenticado
+                );
+
+                ventana.setMember(
+                        "nautaHistorialBridge",
+                        historialBridge
+                );
+
+                LOGGER.info(
+                        "Consulta de historial habilitada."
+                );
+            }
+
             engine.executeScript(
                     "if (typeof window.nautaDashboardReady " +
                             "=== 'function') {" +
@@ -290,38 +310,52 @@ public class WebPreviewApp extends Application {
                             "}"
             );
 
-            cargarScriptTickets();
-
-            System.out.println(
-                    "[WEB] Módulo de tickets registrado."
+            cargarScript(
+                    "/web/js/tickets.js",
+                    "js/tickets.js"
             );
+
+            if (esTecnico()) {
+                cargarScript(
+                        "/web/js/atencion.js",
+                        "js/atencion.js"
+                );
+            }
+
+            if (esAdministrador() || esTecnico()) {
+                cargarScript(
+                        "/web/js/historial.js",
+                        "js/historial.js"
+                );
+            }
 
         } catch (Exception e) {
 
-            System.err.println(
-                    "[WEB] Error registrando dashboard."
+            LOGGER.log(
+                    Level.SEVERE,
+                    "No se pudo registrar el dashboard",
+                    e
             );
-
-            e.printStackTrace();
         }
     }
 
-    private void cargarScriptTickets() {
+    private void cargarScript(
+            String rutaRecurso,
+            String rutaHtml
+    ) {
 
-        URL script = getClass().getResource(
-                "/web/js/tickets.js"
-        );
+        URL recurso = getClass().getResource(rutaRecurso);
 
-        if (script == null) {
+        if (recurso == null) {
             throw new IllegalStateException(
-                    "No se encontró /web/js/tickets.js"
+                    "No se encontró el archivo: " + rutaRecurso
             );
         }
 
         String codigo =
                 "(function() {" +
-                        "const script = document.createElement('script');" +
-                        "script.src = 'js/tickets.js';" +
+                        "var script = document.createElement('script');" +
+                        "script.src = '" + rutaHtml + "';" +
                         "document.body.appendChild(script);" +
                         "})();";
 
@@ -337,7 +371,17 @@ public class WebPreviewApp extends Application {
         );
     }
 
+    private boolean esTecnico() {
+
+        return haySesion()
+                && usuarioAutenticado.getRol() != null
+                && "TECNICO".equalsIgnoreCase(
+                usuarioAutenticado.getRol().getNombre()
+        );
+    }
+
     private void abrirLogin() {
+
         stage.setTitle("NautaTicket - Acceso");
         engine.load(paginaLogin);
     }
@@ -356,15 +400,11 @@ public class WebPreviewApp extends Application {
     private void cerrarSesion() {
 
         limpiarSesion();
-
-        System.out.println(
-                "[WEB] Sesión cerrada."
-        );
-
+        LOGGER.info("Sesión cerrada.");
         abrirLogin();
     }
 
-    private void limpiarSesion() {
+    private void desactivarPuentes() {
 
         if (adminBridge != null) {
             adminBridge.desactivar();
@@ -374,13 +414,29 @@ public class WebPreviewApp extends Application {
             ticketBridge.desactivar();
         }
 
+        if (atencionBridge != null) {
+            atencionBridge.desactivar();
+        }
+
+        if (historialBridge != null) {
+            historialBridge.desactivar();
+        }
+
+        adminBridge = null;
+        ticketBridge = null;
+        atencionBridge = null;
+        historialBridge = null;
+    }
+
+    private void limpiarSesion() {
+
+        desactivarPuentes();
+
         usuarioAutenticado = null;
         perfilAutenticado = null;
 
         loginBridge = null;
         dashboardBridge = null;
-        adminBridge = null;
-        ticketBridge = null;
     }
 
     private boolean haySesion() {
@@ -392,32 +448,32 @@ public class WebPreviewApp extends Application {
     }
 
     private boolean esMismaPagina(
-            String direccionEsperada,
-            String direccionActual
+            String esperada,
+            String actual
     ) {
 
         try {
 
-            URI esperada = URI.create(direccionEsperada);
-            URI actual = URI.create(direccionActual);
+            URI uriEsperada = URI.create(esperada);
+            URI uriActual = URI.create(actual);
 
             if (!"file".equalsIgnoreCase(
-                    esperada.getScheme()
+                    uriEsperada.getScheme()
             )) {
                 return false;
             }
 
             if (!"file".equalsIgnoreCase(
-                    actual.getScheme()
+                    uriActual.getScheme()
             )) {
                 return false;
             }
 
             Path rutaEsperada =
-                    Path.of(esperada).toRealPath();
+                    Path.of(uriEsperada).toRealPath();
 
             Path rutaActual =
-                    Path.of(actual).toRealPath();
+                    Path.of(uriActual).toRealPath();
 
             return rutaEsperada.equals(rutaActual);
 
