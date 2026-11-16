@@ -1,18 +1,14 @@
+
 package ni.edu.uam.nautaticket.bridge;
 
 import javafx.concurrent.Task;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.web.WebEngine;
-import javafx.stage.Stage;
 
-import ni.edu.uam.nautaticket.NautaTicketApp;
-import ni.edu.uam.nautaticket.controller.PanelController;
 import ni.edu.uam.nautaticket.controller.PerfilAcceso;
 import ni.edu.uam.nautaticket.model.Usuario;
 import ni.edu.uam.nautaticket.service.AuthService;
 
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,19 +18,19 @@ public class WebLoginBridge {
             Logger.getLogger(WebLoginBridge.class.getName());
 
     private final WebEngine engine;
-    private final Stage stage;
     private final String paginaPermitida;
+    private final BiConsumer<Usuario, String> alAutenticar;
 
-    private boolean procesando = false;
+    private boolean procesando;
 
     public WebLoginBridge(
             WebEngine engine,
-            Stage stage,
-            String paginaPermitida
+            String paginaPermitida,
+            BiConsumer<Usuario, String> alAutenticar
     ) {
         this.engine = engine;
-        this.stage = stage;
         this.paginaPermitida = paginaPermitida;
+        this.alAutenticar = alAutenticar;
     }
 
     public void iniciarSesion(
@@ -42,13 +38,10 @@ public class WebLoginBridge {
             String password,
             String perfil
     ) {
-
         if (procesando) {
             return;
         }
 
-        // El puente solamente acepta solicitudes
-        // desde la pantalla local de acceso.
         if (!paginaPermitida.equals(engine.getLocation())) {
             return;
         }
@@ -68,6 +61,8 @@ public class WebLoginBridge {
             return;
         }
 
+        String correoNormalizado = correo.trim();
+
         procesando = true;
 
         Task<Usuario> tarea = new Task<>() {
@@ -77,7 +72,7 @@ public class WebLoginBridge {
                 AuthService servicio = new AuthService();
 
                 return servicio.iniciarSesion(
-                        correo,
+                        correoNormalizado,
                         password
                 );
             }
@@ -87,21 +82,37 @@ public class WebLoginBridge {
 
             procesando = false;
 
-            Usuario usuario = tarea.getValue();
+            try {
+                Usuario usuario = tarea.getValue();
 
-            if (usuario == null
-                    || usuario.getRol() == null
-                    || !perfilSeleccionado.coincideConRol(
-                    usuario.getRol().getNombre()
-            )) {
+                if (usuario == null
+                        || usuario.getRol() == null
+                        || !perfilSeleccionado.coincideConRol(
+                        usuario.getRol().getNombre()
+                )) {
+
+                    mostrarError(
+                            "Correo, contraseña o perfil incorrectos."
+                    );
+                    return;
+                }
+
+                alAutenticar.accept(
+                        usuario,
+                        nombrePerfil(perfil)
+                );
+
+            } catch (Exception e) {
+                LOGGER.log(
+                        Level.SEVERE,
+                        "Error completando el acceso",
+                        e
+                );
 
                 mostrarError(
-                        "Correo, contraseña o perfil incorrectos."
+                        "No se pudo completar el inicio de sesión."
                 );
-                return;
             }
-
-            abrirPanel(usuario);
         });
 
         tarea.setOnFailed(event -> {
@@ -110,7 +121,7 @@ public class WebLoginBridge {
 
             LOGGER.log(
                     Level.SEVERE,
-                    "Error durante la autenticación",
+                    "Error de autenticación",
                     tarea.getException()
             );
 
@@ -137,81 +148,46 @@ public class WebLoginBridge {
         return switch (perfil) {
             case "ADMIN" ->
                     PerfilAcceso.ADMINISTRADOR;
-
             case "TECNICO" ->
                     PerfilAcceso.PERSONAL_TI;
-
             case "EMPLEADO" ->
                     PerfilAcceso.EMPLEADO;
-
             default -> null;
         };
     }
 
-    private void abrirPanel(Usuario usuario) {
+    private String nombrePerfil(String perfil) {
 
-        try {
-            FXMLLoader loader = new FXMLLoader(
-                    NautaTicketApp.class.getResource(
-                            "panel.fxml"
-                    )
-            );
-
-            Parent root = loader.load();
-
-            PanelController controller =
-                    loader.getController();
-
-            controller.iniciar(usuario);
-
-            Scene scene = new Scene(root);
-
-            stage.setScene(scene);
-            stage.setTitle("NautaTicket");
-            stage.sizeToScene();
-            stage.centerOnScreen();
-
-        } catch (Exception e) {
-
-            LOGGER.log(
-                    Level.SEVERE,
-                    "No se pudo abrir el panel principal",
-                    e
-            );
-
-            mostrarError(
-                    "El acceso fue validado, pero no se pudo " +
-                            "abrir el panel principal."
-            );
-        }
+        return switch (perfil) {
+            case "ADMIN" -> "Administrador";
+            case "TECNICO" -> "Soporte técnico";
+            case "EMPLEADO" -> "Empleado";
+            default -> "Usuario";
+        };
     }
 
     private void mostrarError(String mensaje) {
 
-        if (engine.getLoadWorker().isRunning()) {
+        if (!paginaPermitida.equals(engine.getLocation())) {
             return;
         }
 
-        // Solo se envían mensajes fijos a JavaScript.
-        // Nunca se devuelven contraseñas ni hashes.
         String mensajeSeguro = switch (mensaje) {
+
             case "Completa los campos y selecciona un perfil." ->
                     "Completa los campos y selecciona un perfil.";
 
             case "Correo, contraseña o perfil incorrectos." ->
                     "Correo, contraseña o perfil incorrectos.";
 
-            case "El acceso fue validado, pero no se pudo abrir el panel principal." ->
-                    "El acceso fue validado, pero no se pudo abrir el panel principal.";
-
             default ->
                     "No se pudo completar el inicio de sesión.";
         };
 
         engine.executeScript(
-                "window.nautaLoginError(" +
-                        "'" + mensajeSeguro + "'" +
-                        ");"
+                "if (typeof window.nautaLoginError === 'function') {" +
+                        "window.nautaLoginError('" + mensajeSeguro + "');" +
+                        "}"
         );
     }
 }
