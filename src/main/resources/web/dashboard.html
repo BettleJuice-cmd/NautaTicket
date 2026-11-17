@@ -562,7 +562,7 @@
 
             <button class="nav-item active"
                     type="button"
-                    data-section="resumen">
+                    data-section="resumen" data-roles="Administrador">
                 <svg viewBox="0 0 24 24">
                     <rect x="3" y="3" width="8" height="8" rx="1"/>
                     <rect x="13" y="3" width="8" height="8" rx="1"/>
@@ -574,7 +574,7 @@
 
             <button class="nav-item"
                     type="button"
-                    data-section="tickets">
+                    data-section="tickets" data-roles="Administrador,Empleado">
                 <svg viewBox="0 0 24 24">
                     <path d="M4 4h16v5a3 3 0 0 0 0 6v5H4v-5a3 3 0 0 0 0-6V4Z"/>
                     <path d="M12 4v16" stroke-dasharray="2 2"/>
@@ -681,7 +681,7 @@
 
         <div class="workspace-content">
 
-            <section id="resumen" class="workspace-section">
+            <section id="resumen" class="workspace-section" data-roles="Administrador">
 
                 <div class="page-heading">
                     <div>
@@ -780,7 +780,7 @@
                 </div>
             </section>
 
-            <section id="tickets"
+            <section id="tickets" data-roles="Administrador,Empleado"
                      class="workspace-section"
                      hidden>
 

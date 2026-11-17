@@ -434,6 +434,10 @@ document.addEventListener("DOMContentLoaded", () => {
             $("currentSection").textContent = nombres[nombre];
         }
 
+        window.dispatchEvent(new CustomEvent("nautaSeccionCambiada", {
+            detail: { seccion: nombre }
+        }));
+
         if (nombre === "administracion") {
             cargarAdministracion();
         }
@@ -1269,7 +1273,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             aplicarPermisos();
-            mostrarSeccion("resumen");
+            mostrarSeccion(perfil === "Empleado" ? "tickets"
+                : perfil === "Soporte técnico" ? "atencion" : "resumen");
 
             if (perfil === "Administrador") {
                 mostrarTab("usuarios");
