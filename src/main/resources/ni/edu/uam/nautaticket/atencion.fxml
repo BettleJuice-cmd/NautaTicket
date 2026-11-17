@@ -12,29 +12,46 @@
       prefHeight="650">
 
     <padding>
-        <Insets top="18" right="18" bottom="18" left="18"/>
+        <Insets top="18" right="18"
+                bottom="18" left="18"/>
     </padding>
 
-    <Label text="Atencion de tickets - FIFO"
+    <Label text="Atención de tickets - FIFO"
            style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
 
     <HBox spacing="10" alignment="CENTER_LEFT">
-        <Label text="ID tecnico:"/>
+        <Label text="ID técnico:"/>
 
         <TextField fx:id="campoTecnico"
-                   promptText="ID del tecnico"
-                   prefWidth="150"/>
+                   promptText="ID del técnico"
+                   prefWidth="110"
+                   editable="false"/>
 
-        <Button fx:id="botonActualizar" text="Actualizar listas"
+        <Button fx:id="botonActualizar"
+                text="Actualizar listas"
                 onAction="#actualizar"/>
 
-        <Button fx:id="botonTomar" text="Tomar siguiente ticket FIFO"
+        <Button fx:id="botonTomar"
+                text="Tomar siguiente ticket FIFO"
                 onAction="#tomarSiguiente"/>
 
         <ProgressIndicator fx:id="progresoToma"
-                           accessibleText="Asignación FIFO en curso"
-                           prefWidth="22" prefHeight="22"
-                           maxWidth="22" maxHeight="22"/>
+                           accessibleText="Operación en curso"
+                           prefWidth="22"
+                           prefHeight="22"
+                           maxWidth="22"
+                           maxHeight="22"/>
+    </HBox>
+
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <Label fx:id="etiquetaCapacidad"
+               text="Mis tickets activos: -- / 3"
+               style="-fx-font-size: 14px;
+                      -fx-font-weight: bold;
+                      -fx-text-fill: #285578;"/>
+
+        <Label text="Máximo: 3 tickets simultáneos"
+               style="-fx-text-fill: #666666;"/>
     </HBox>
 
     <Label text="Tickets pendientes"
@@ -49,11 +66,11 @@
                          prefWidth="65"/>
 
             <TableColumn fx:id="columnaPendienteTitulo"
-                         text="Titulo"
+                         text="Título"
                          prefWidth="550"/>
 
             <TableColumn fx:id="columnaPendienteFecha"
-                         text="Fecha de creacion"
+                         text="Fecha de creación"
                          prefWidth="200"/>
         </columns>
     </TableView>
@@ -70,7 +87,7 @@
                          prefWidth="65"/>
 
             <TableColumn fx:id="columnaMioTitulo"
-                         text="Titulo"
+                         text="Título"
                          prefWidth="550"/>
 
             <TableColumn fx:id="columnaMioEstado"
@@ -79,22 +96,24 @@
         </columns>
     </TableView>
 
-    <Label text="Solucion del ticket"/>
+    <Label text="Solución del ticket"/>
 
     <TextArea fx:id="campoSolucion"
-              promptText="Describe la solucion aplicada"
+              promptText="Describe la solución aplicada"
               prefRowCount="2"/>
 
     <HBox spacing="10">
-        <Button fx:id="botonIniciar" text="Iniciar atencion"
+        <Button fx:id="botonIniciar"
+                text="Iniciar atención"
                 onAction="#iniciar"/>
 
-        <Button fx:id="botonResolver" text="Resolver ticket"
+        <Button fx:id="botonResolver"
+                text="Resolver ticket"
                 onAction="#resolver"/>
     </HBox>
 
     <Label fx:id="mensaje"
-           text="Introduce el ID del tecnico."
+           text="Cargando información de atención..."
            wrapText="true"/>
 
 </VBox>
