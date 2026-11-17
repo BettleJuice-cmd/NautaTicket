@@ -1,0 +1,44 @@
+.workspace,
+.workspace-main,
+.workspace-sidebar,
+.workspace-topbar,
+.workspace-content {
+    background: #000000;
+}
+
+.workspace-sidebar {
+    border-right-color: #222222;
+}
+
+.workspace-topbar {
+    border-bottom-color: #222222;
+}
+
+.metric,
+.content-panel,
+.simple-note {
+    background: #0b0b0b;
+    border-color: #292929;
+}
+
+.data-table th {
+    background: #111111;
+}
+
+.data-table td {
+    background: #0b0b0b;
+}
+
+.nav-item:hover {
+    background: #181818;
+}
+
+.nav-item.active {
+    background: #171121;
+    color: #cfc3ff;
+    border-color: #342b47;
+}
+
+.role-tag {
+    background: #151019;
+}

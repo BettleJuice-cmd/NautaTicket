@@ -1,0 +1,350 @@
+
+/* NautaTicket - Pulido visual para JavaFX WebView */
+
+:root {
+    --font: "Segoe UI", Tahoma, Arial, sans-serif;
+    --mono: Consolas, "Courier New", monospace;
+    --bg: #000000;
+    --surface: #0d0d0d;
+    --border: #303035;
+    --text: #f2f2f4;
+    --muted: #a6a6b0;
+    --purple: #9783db;
+    --purple-hover: #b4a3ec;
+}
+
+html,
+body {
+    background: #000000 !important;
+    color: var(--text);
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif !important;
+    font-size: 14px;
+    -webkit-font-smoothing: auto;
+}
+
+/* Tipografia compatible con WebView */
+
+body,
+button,
+input,
+select,
+textarea,
+option,
+.workspace,
+.workspace-sidebar,
+.workspace-main,
+.access-layout,
+.access-sidebar,
+.access-main,
+.admin-modal,
+.tickets-modal,
+.reporte-formulario,
+.reporte-calendario,
+.historial-filtros,
+.atencion-solucion,
+.api-panel,
+.api-metrica,
+.api-grafico,
+.admin-search,
+.admin-field,
+.tickets-input,
+.tickets-select,
+.tickets-textarea,
+.historial-input,
+.historial-select,
+.reporte-input {
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif !important;
+}
+
+/* Numeros e identificadores */
+
+.metric-value,
+.admin-stat strong,
+.atencion-metrica strong,
+.atencion-capacidad-valor,
+.api-metrica strong,
+.api-barra-numero,
+.historial-id,
+.reporte-ruta {
+    font-family: Consolas, "Courier New", monospace !important;
+}
+
+/* Legibilidad */
+
+.page-heading p,
+.panel-heading p,
+.simple-note p,
+.admin-info,
+.admin-feedback,
+.admin-modal p,
+.tickets-feedback,
+.tickets-caption,
+.tickets-modal p,
+.atencion-panel-cabecera p,
+.atencion-detalle p,
+.atencion-capacidad-cabecera p,
+.atencion-capacidad-aviso,
+.atencion-ayuda,
+.atencion-mensaje,
+.historial-mensaje,
+.reporte-ayuda,
+.reporte-informacion p,
+.reporte-mensaje,
+.api-panel-header p,
+.api-pie,
+.api-mensaje,
+.section-heading p,
+.access-panel p {
+    word-spacing: 0.10em;
+    line-height: 1.65 !important;
+    letter-spacing: 0.01em;
+    overflow-wrap: break-word;
+}
+
+/* Encabezados y contenedores */
+
+.page-heading h1 {
+    font-size: 25px;
+    line-height: 1.25;
+    letter-spacing: -0.035em;
+}
+
+.page-heading {
+    margin-bottom: 25px;
+}
+
+.panel-heading h2,
+.atencion-panel-cabecera h2,
+.api-panel-header h2 {
+    line-height: 1.35;
+}
+
+.content-panel,
+.atencion-panel,
+.atencion-capacidad,
+.api-panel,
+.reporte-formulario,
+.reporte-informacion,
+.historial-filtros {
+    border-color: #303035 !important;
+}
+
+/* Campos oscuros */
+
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select,
+.admin-search,
+.admin-field,
+.tickets-input,
+.tickets-select,
+.tickets-textarea,
+.historial-input,
+.historial-select,
+.reporte-input,
+.atencion-solucion {
+    box-sizing: border-box;
+    color: #f2f2f4 !important;
+    -webkit-text-fill-color: #f2f2f4 !important;
+    background-color: #09090b !important;
+    border-color: #393940 !important;
+    color-scheme: dark;
+}
+
+input::placeholder,
+textarea::placeholder,
+.admin-search::placeholder,
+.tickets-input::placeholder,
+.historial-input::placeholder,
+.atencion-solucion::placeholder {
+    color: #9b9ba6 !important;
+    -webkit-text-fill-color: #9b9ba6 !important;
+    opacity: 1;
+}
+
+select option {
+    background: #151519 !important;
+    color: #f2f2f4 !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+.admin-search:focus,
+.admin-field:focus,
+.tickets-input:focus,
+.tickets-select:focus,
+.historial-input:focus,
+.historial-select:focus,
+.reporte-input:focus,
+.atencion-solucion:focus {
+    border-color: #9783db !important;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(151, 131, 219, .16) !important;
+}
+
+/* Botones */
+
+.button,
+.admin-small-button,
+.tickets-action,
+.nav-item,
+.tab,
+.reporte-fecha-boton,
+.reporte-calendario-nav {
+    transition:
+            background-color .16s ease,
+            border-color .16s ease,
+            color .16s ease;
+}
+
+.button-primary {
+    background-color: #9783db !important;
+    color: #111016 !important;
+}
+
+.button-primary:hover:not(:disabled) {
+    background-color: #b4a3ec !important;
+}
+
+.button-secondary {
+    background-color: #19191d !important;
+    color: #ededf1 !important;
+    border-color: #37373d !important;
+}
+
+.button-secondary:hover:not(:disabled) {
+    background-color: #282830 !important;
+}
+
+button:disabled {
+    opacity: .56;
+    cursor: not-allowed;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.atencion-tabla tr:focus-visible {
+    outline: 2px solid #9783db !important;
+    outline-offset: 2px;
+}
+
+/* Tablas */
+
+.data-table th,
+.atencion-tabla th {
+    color: #b6b6c0 !important;
+}
+
+.data-table td,
+.atencion-tabla td {
+    line-height: 1.5;
+}
+
+.data-table tbody tr:hover td {
+    background: #15151a;
+}
+
+.data-table td,
+.data-table th,
+.atencion-tabla td,
+.atencion-tabla th {
+    overflow-wrap: anywhere;
+}
+
+.table-scroll,
+.atencion-tabla-contenedor {
+    scrollbar-color: #494354 #101014;
+}
+
+/* Ventanas y calendarios */
+
+.admin-modal,
+.tickets-modal,
+.reporte-calendario {
+    color: #f2f2f4;
+}
+
+.admin-modal-backdrop,
+.tickets-modal-overlay {
+    background: rgba(0, 0, 0, .84);
+}
+
+.reporte-calendario {
+    box-shadow: 0 15px 42px rgba(0, 0, 0, .66);
+}
+
+/* Adaptabilidad */
+
+@media (max-width: 880px) {
+    .workspace-content {
+        padding: 26px 24px;
+    }
+
+    .workspace-topbar {
+        padding: 0 24px;
+    }
+
+    .reporte-grid,
+    .historial-filtros {
+        gap: 14px;
+    }
+}
+
+@media (max-width: 520px) {
+    .workspace-content {
+        padding: 22px 16px;
+    }
+
+    .workspace-topbar {
+        padding: 0 16px;
+    }
+
+    .page-heading h1 {
+        font-size: 22px;
+    }
+
+    .button {
+        min-height: 42px;
+    }
+    /* Separación del encabezado */
+
+    .workspace-path {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        white-space: nowrap;
+    }
+
+    .workspace-separator {
+        color: #777780;
+    }
+
+    .workspace-path strong {
+        color: #f2f2f4;
+        font-weight: 500;
+    }
+
+    /* Separacion de rutas en Login y Dashboard */
+    .breadcrumb,
+    .workspace-path {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        white-space: nowrap;
+    }
+
+    .breadcrumb-separator,
+    .workspace-separator {
+        display: inline-block;
+        color: #777780;
+    }
+
+    .breadcrumb strong,
+    .workspace-path strong {
+        color: #f2f2f4;
+        font-weight: 500;
+    }
+}

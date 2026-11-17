@@ -2,10 +2,14 @@ module ni.edu.uam.nautaticket {
 
     requires javafx.controls;
     requires javafx.fxml;
+    requires javafx.web;
+    requires jdk.jsobject;
+
     requires java.sql;
     requires java.net.http;
-    requires org.postgresql.jdbc;
     requires java.naming;
+
+    requires org.postgresql.jdbc;
     requires org.hibernate.orm.core;
     requires jakarta.persistence;
     requires jbcrypt;
@@ -16,14 +20,24 @@ module ni.edu.uam.nautaticket {
     requires net.sf.jasperreports.pdf;
     requires net.sf.jasperreports.jdt;
 
-    exports ni.edu.uam.nautaticket to javafx.graphics;
+    exports ni.edu.uam.nautaticket
+            to javafx.graphics, javafx.web;
+
+    exports ni.edu.uam.nautaticket.bridge
+            to javafx.web;
+
+    opens ni.edu.uam.nautaticket.bridge
+            to javafx.web;
+
     exports ni.edu.uam.nautaticket.util;
     exports ni.edu.uam.nautaticket.dto;
 
     opens ni.edu.uam.nautaticket.dto
             to net.sf.jasperreports.core;
 
-    opens ni.edu.uam.nautaticket.controller to javafx.fxml;
-    opens ni.edu.uam.nautaticket.model to org.hibernate.orm.core;
+    opens ni.edu.uam.nautaticket.controller
+            to javafx.fxml;
 
+    opens ni.edu.uam.nautaticket.model
+            to org.hibernate.orm.core;
 }
