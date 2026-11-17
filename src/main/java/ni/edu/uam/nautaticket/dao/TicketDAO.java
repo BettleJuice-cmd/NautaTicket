@@ -3,6 +3,7 @@ package ni.edu.uam.nautaticket.dao;
 import ni.edu.uam.nautaticket.model.Categoria;
 import ni.edu.uam.nautaticket.model.EstadoTicket;
 import ni.edu.uam.nautaticket.model.Ticket;
+import ni.edu.uam.nautaticket.model.Usuario;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
@@ -22,11 +23,12 @@ public class TicketDAO {
         this.idSolicitante = idSolicitante;
     }
 
-    public void guardar(Ticket ticket) {
-        if (idSolicitante != null && !idSolicitante.equals(ticket.getIdSolicitante())) {
+    public void guardar(Ticket ticket, Integer solicitanteId) {
+        if (idSolicitante != null && !idSolicitante.equals(solicitanteId)) {
             throw new IllegalArgumentException("El solicitante debe coincidir con el usuario de la sesión.");
         }
         sessionFactory.inTransaction(session -> {
+            ticket.setSolicitante(session.getReference(Usuario.class, solicitanteId));
             if (ticket.getEstado() == null) {
                 EstadoTicket pendiente = session.createSelectionQuery(
                         "FROM EstadoTicket e WHERE e.nombre = 'PENDIENTE'", EstadoTicket.class
@@ -42,7 +44,7 @@ public class TicketDAO {
         try (Session session = sessionFactory.openSession()) {
             return session.createSelectionQuery("""
                     SELECT t FROM Ticket t JOIN FETCH t.categoria JOIN FETCH t.estado
-                    WHERE (:solicitante IS NULL OR t.idSolicitante = :solicitante)
+                    WHERE (:solicitante IS NULL OR t.solicitante.id = :solicitante)
                     ORDER BY t.fechaCreacion ASC, t.idTicket ASC
                     """, Ticket.class)
                     .setParameter("solicitante", idSolicitante, Integer.class)
@@ -55,7 +57,7 @@ public class TicketDAO {
             return session.createSelectionQuery("""
                     SELECT t FROM Ticket t JOIN FETCH t.categoria JOIN FETCH t.estado
                     WHERE t.idTicket = :id
-                      AND (:solicitante IS NULL OR t.idSolicitante = :solicitante)
+                      AND (:solicitante IS NULL OR t.solicitante.id = :solicitante)
                     """, Ticket.class)
                     .setParameter("id", id)
                     .setParameter("solicitante", idSolicitante, Integer.class)
@@ -68,7 +70,7 @@ public class TicketDAO {
             return session.createSelectionQuery("""
                     SELECT t FROM Ticket t JOIN FETCH t.categoria JOIN FETCH t.estado
                     WHERE t.categoria.idCategoria = :idCategoria
-                      AND (:solicitante IS NULL OR t.idSolicitante = :solicitante)
+                      AND (:solicitante IS NULL OR t.solicitante.id = :solicitante)
                     ORDER BY t.fechaCreacion ASC, t.idTicket ASC
                     """, Ticket.class)
                     .setParameter("idCategoria", idCategoria)
@@ -84,7 +86,7 @@ public class TicketDAO {
                 SET t.titulo = :titulo, t.descripcion = :descripcion, t.categoria = :categoria
                 WHERE t.idTicket = :id
                   AND t.estado.idEstado = (SELECT e.idEstado FROM EstadoTicket e WHERE e.nombre = 'PENDIENTE')
-                  AND (:solicitante IS NULL OR t.idSolicitante = :solicitante)
+                  AND (:solicitante IS NULL OR t.solicitante.id = :solicitante)
                 """)
                 .setParameter("titulo", titulo)
                 .setParameter("descripcion", descripcion)
@@ -99,7 +101,7 @@ public class TicketDAO {
                 DELETE FROM Ticket t
                 WHERE t.idTicket = :id
                   AND t.estado.idEstado = (SELECT e.idEstado FROM EstadoTicket e WHERE e.nombre = 'PENDIENTE')
-                  AND (:solicitante IS NULL OR t.idSolicitante = :solicitante)
+                  AND (:solicitante IS NULL OR t.solicitante.id = :solicitante)
                   AND NOT EXISTS (SELECT 1 FROM HistorialTicket h WHERE h.ticket.idTicket = :id)
                 """)
                 .setParameter("id", id)

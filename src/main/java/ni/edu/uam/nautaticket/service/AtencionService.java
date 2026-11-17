@@ -1,4 +1,3 @@
-
 package ni.edu.uam.nautaticket.service;
 
 import ni.edu.uam.nautaticket.dao.AsignacionTicketDao;
@@ -14,6 +13,8 @@ import org.hibernate.SessionFactory;
 import java.util.List;
 
 public class AtencionService {
+
+    public static final int MAX_TICKETS_ACTIVOS = 3;
 
     private final SessionFactory sessionFactory;
     private final AsignacionTicketDao dao;
@@ -37,16 +38,44 @@ public class AtencionService {
         return dao.listarMisTickets(idTecnico);
     }
 
+    public int contarTicketsActivos(int idTecnico) {
+        if (idTecnico <= 0) {
+            throw new IllegalArgumentException(
+                    "El identificador del técnico no es válido."
+            );
+        }
+
+        return Math.toIntExact(dao.contarActivas(idTecnico));
+    }
+
     public int tomarSiguienteTicket(int idTecnico) {
         return sessionFactory.fromTransaction(session -> {
+
             dao.bloquearColaParaAsignar(session);
-            Usuario tecnico = buscarTecnicoActivo(session, idTecnico);
+
+            Usuario tecnico = buscarTecnicoActivo(
+                    session, idTecnico
+            );
+
+            long cantidadActual = dao.contarActivas(
+                    session, idTecnico
+            );
+
+            if (cantidadActual >= MAX_TICKETS_ACTIVOS) {
+                throw new IllegalStateException(
+                        "Has alcanzado el límite de "
+                                + MAX_TICKETS_ACTIVOS
+                                + " tickets activos. Resuelve uno "
+                                + "antes de tomar otro."
+                );
+            }
 
             Integer idTicket = dao.buscarSiguienteFIFO(session);
 
             if (idTicket == null) {
                 throw new IllegalStateException(
-                        "No hay tickets pendientes disponibles.");
+                        "No hay tickets pendientes disponibles."
+                );
             }
 
             int actualizados = session.createNativeMutationQuery("""
@@ -62,17 +91,21 @@ public class AtencionService {
 
             if (actualizados != 1) {
                 throw new IllegalStateException(
-                        "El ticket ya fue asignado.");
+                        "El ticket ya fue asignado."
+                );
             }
 
-            AsignacionTicket asignacion =
-                    new AsignacionTicket(idTicket, idTecnico);
+            Ticket ticket = session.getReference(
+                    Ticket.class, idTicket
+            );
 
-            session.persist(asignacion);
+            session.persist(
+                    new AsignacionTicket(ticket, tecnico)
+            );
 
             historialService.registrarCambioTecnico(
                     session,
-                    session.getReference(Ticket.class, idTicket),
+                    ticket,
                     tecnico,
                     null,
                     idTecnico
@@ -84,12 +117,16 @@ public class AtencionService {
 
     public void iniciarAtencion(int idTicket, int idTecnico) {
         sessionFactory.inTransaction(session -> {
-            Usuario tecnico = buscarTecnicoActivo(session, idTecnico);
+
+            Usuario tecnico = buscarTecnicoActivo(
+                    session, idTecnico
+            );
 
             int actualizados = session.createNativeMutationQuery("""
                     UPDATE tickets t
                     SET id_estado = destino.id_estado
-                    FROM estados_ticket origen, estados_ticket destino
+                    FROM estados_ticket origen,
+                         estados_ticket destino
                     WHERE t.id_ticket = :ticket
                       AND t.id_tecnico = :tecnico
                       AND t.id_estado = origen.id_estado
@@ -109,7 +146,8 @@ public class AtencionService {
 
             if (actualizados != 1) {
                 throw new IllegalStateException(
-                        "No se puede iniciar la atencion del ticket.");
+                        "No se puede iniciar la atención del ticket."
+                );
             }
 
             historialService.registrarCambioEstado(
@@ -118,7 +156,7 @@ public class AtencionService {
                     tecnico,
                     "PENDIENTE",
                     "EN_PROCESO",
-                    "Inicio de atencion del ticket."
+                    "Inicio de atención del ticket."
             );
         });
     }
@@ -130,36 +168,44 @@ public class AtencionService {
     ) {
         if (solucion == null || solucion.isBlank()) {
             throw new IllegalArgumentException(
-                    "Debes escribir la solucion del ticket.");
+                    "Debes escribir la solución del ticket."
+            );
         }
 
-        String solucionRegistrada = solucion.trim();
+        String textoSolucion = solucion.trim();
+
         sessionFactory.inTransaction(session -> {
-            Usuario tecnico = buscarTecnicoActivo(session, idTecnico);
+
+            Usuario tecnico = buscarTecnicoActivo(
+                    session, idTecnico
+            );
 
             int actualizados = session.createNativeMutationQuery("""
                     UPDATE tickets t
                     SET id_estado = destino.id_estado,
                         solucion = :solucion,
                         fecha_resolucion = CURRENT_TIMESTAMP
-                    FROM estados_ticket origen, estados_ticket destino
+                    FROM estados_ticket origen,
+                         estados_ticket destino
                     WHERE t.id_ticket = :ticket
                       AND t.id_tecnico = :tecnico
                       AND t.id_estado = origen.id_estado
                       AND origen.nombre = 'EN_PROCESO'
                       AND destino.nombre = 'RESUELTO'
                     """)
-                    .setParameter("solucion", solucionRegistrada)
+                    .setParameter("solucion", textoSolucion)
                     .setParameter("ticket", idTicket)
                     .setParameter("tecnico", idTecnico)
                     .executeUpdate();
 
             if (actualizados != 1) {
                 throw new IllegalStateException(
-                        "El ticket no esta en proceso o no pertenece al tecnico.");
+                        "El ticket no está en proceso "
+                                + "o no pertenece al técnico."
+                );
             }
 
-            int asignacionesCerradas = session.createNativeMutationQuery("""
+            int cerradas = session.createNativeMutationQuery("""
                     UPDATE asignaciones_ticket
                     SET fecha_fin = CURRENT_TIMESTAMP
                     WHERE id_ticket = :ticket
@@ -170,9 +216,11 @@ public class AtencionService {
                     .setParameter("tecnico", idTecnico)
                     .executeUpdate();
 
-            if (asignacionesCerradas != 1) {
+            if (cerradas != 1) {
                 throw new IllegalStateException(
-                        "La resolución requiere exactamente una asignación activa del técnico.");
+                        "La resolución requiere exactamente "
+                                + "una asignación activa."
+                );
             }
 
             historialService.registrarCambioEstado(
@@ -181,12 +229,15 @@ public class AtencionService {
                     tecnico,
                     "EN_PROCESO",
                     "RESUELTO",
-                    "Ticket resuelto: " + solucionRegistrada
+                    "Ticket resuelto: " + textoSolucion
             );
         });
     }
 
-    private Usuario buscarTecnicoActivo(Session session, int idTecnico) {
+    private Usuario buscarTecnicoActivo(
+            Session session,
+            int idTecnico
+    ) {
         return session.createSelectionQuery("""
                 FROM Usuario u
                 WHERE u.id = :tecnico
@@ -195,6 +246,8 @@ public class AtencionService {
                 """, Usuario.class)
                 .setParameter("tecnico", idTecnico)
                 .uniqueResultOptional()
-                .orElseThrow(() -> new IllegalArgumentException("El usuario no es un técnico activo."));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "El usuario no es un técnico activo."
+                ));
     }
 }

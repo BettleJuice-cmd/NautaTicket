@@ -34,13 +34,25 @@ public class HistorialTicketDAO {
             LocalDate hasta,
             String estado) {
 
+        return buscar(idTicket, desde, hasta, estado);
+    }
+
+    public List<HistorialTicket> buscar(
+            Integer idTicket,
+            LocalDate desde,
+            LocalDate hasta,
+            String estado) {
+
         StringBuilder hql = new StringBuilder("""
                 SELECT h FROM HistorialTicket h
                 JOIN FETCH h.ticket t
                 JOIN FETCH h.usuario
-                WHERE t.idTicket = :ticket
-                  AND (:solicitante IS NULL OR t.idSolicitante = :solicitante)
+                WHERE (:solicitante IS NULL OR t.solicitante.id = :solicitante)
                 """);
+
+        if (idTicket != null) {
+            hql.append(" AND t.idTicket = :ticket");
+        }
 
         if (desde != null) {
             hql.append(" AND h.fechaCambio >= :desde");
@@ -63,7 +75,9 @@ public class HistorialTicketDAO {
                     HistorialTicket.class
             );
 
-            query.setParameter("ticket", idTicket);
+            if (idTicket != null) {
+                query.setParameter("ticket", idTicket);
+            }
             query.setParameter("solicitante", idSolicitante, Integer.class);
 
             if (desde != null) {

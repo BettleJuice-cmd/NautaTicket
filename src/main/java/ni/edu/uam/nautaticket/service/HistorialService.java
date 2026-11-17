@@ -126,7 +126,16 @@ public class HistorialService {
             LocalDate hasta,
             String estado) {
 
-        if (idTicket <= 0) {
+        return buscar(idTicket, desde, hasta, estado);
+    }
+
+    public List<HistorialTicket> buscar(
+            Integer idTicket,
+            LocalDate desde,
+            LocalDate hasta,
+            String estado) {
+
+        if (idTicket != null && idTicket <= 0) {
             throw new IllegalArgumentException(
                     "El ID del ticket debe ser positivo."
             );
@@ -134,7 +143,7 @@ public class HistorialService {
 
         validarFiltros(desde, hasta, estado);
 
-        return dao.buscarPorTicket(
+        return dao.buscar(
                 idTicket, desde, hasta, estado
         );
     }

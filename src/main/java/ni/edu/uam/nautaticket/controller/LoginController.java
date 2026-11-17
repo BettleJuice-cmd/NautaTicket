@@ -8,40 +8,68 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-
+import ni.edu.uam.nautaticket.NautaTicketApp;
 import ni.edu.uam.nautaticket.model.Usuario;
 import ni.edu.uam.nautaticket.service.AuthService;
+
+import java.io.IOException;
 
 public class LoginController {
 
     @FXML private TextField txtCorreo;
     @FXML private PasswordField txtPassword;
+    @FXML private Label lblPerfil;
     @FXML private Label lblMensaje;
 
     private final AuthService authService = new AuthService();
+    private PerfilAcceso perfilSeleccionado;
+
+    public void seleccionarPerfil(PerfilAcceso perfil) {
+        this.perfilSeleccionado = perfil;
+        lblPerfil.setText("Perfil seleccionado: " + perfil.getNombreVisible());
+    }
+
+    @FXML
+    private void volver() {
+        try {
+            txtPassword.clear();
+            NautaTicketApp.mostrarBienvenida(
+                    (Stage) txtCorreo.getScene().getWindow());
+        } catch (IOException e) {
+            lblMensaje.setText("No se pudo volver a la bienvenida.");
+            System.getLogger(getClass().getName()).log(
+                    System.Logger.Level.ERROR, "Error al volver a la bienvenida", e);
+        }
+    }
 
     @FXML
     private void iniciarSesion() {
+        if (perfilSeleccionado == null) {
+            lblMensaje.setText("Primero selecciona un perfil en la bienvenida.");
+            return;
+        }
 
         String correo = txtCorreo.getText();
         String password = txtPassword.getText();
-
         if (correo.isBlank() || password.isBlank()) {
             lblMensaje.setText("Completa todos los campos");
             return;
         }
 
         try {
-            Usuario usuario = authService.iniciarSesion(
-                    correo, password
-            );
-
+            // Se conserva la autenticación BCrypt existente.
+            Usuario usuario = authService.iniciarSesion(correo, password);
             txtPassword.clear();
 
             if (usuario == null) {
-                lblMensaje.setText(
-                        "Correo o contraseña incorrectos"
-                );
+                lblMensaje.setText("Correo o contraseña incorrectos");
+                return;
+            }
+
+            if (usuario.getRol() == null ||
+                    !perfilSeleccionado.coincideConRol(usuario.getRol().getNombre())) {
+                lblMensaje.setText("Tu cuenta no corresponde al perfil "
+                        + perfilSeleccionado.getNombreVisible() + ".");
                 return;
             }
 
@@ -53,15 +81,13 @@ public class LoginController {
 
             Stage stage = (Stage) txtCorreo.getScene().getWindow();
             stage.setScene(new Scene(root));
-            stage.setTitle("NautaTicket");
+            stage.setTitle("NautaTicket - " + perfilSeleccionado.getNombreVisible());
             stage.sizeToScene();
             stage.centerOnScreen();
-
         } catch (Exception e) {
-            lblMensaje.setText(
-                    "No se pudo completar el inicio de sesión"
-            );
-            e.printStackTrace();
+            lblMensaje.setText("No se pudo completar el inicio de sesión");
+            System.getLogger(getClass().getName()).log(
+                    System.Logger.Level.ERROR, "Error durante el inicio de sesión", e);
         }
     }
 }

@@ -1,21 +1,27 @@
 package ni.edu.uam.nautaticket.util;
 
 import ni.edu.uam.nautaticket.dao.TicketDAO;
+import ni.edu.uam.nautaticket.dao.AsignacionTicketDao;
+import ni.edu.uam.nautaticket.dao.ReporteDAO;
+import ni.edu.uam.nautaticket.dto.ReporteTicketDTO;
 import ni.edu.uam.nautaticket.model.AsignacionTicket;
 import ni.edu.uam.nautaticket.service.AtencionService;
 import ni.edu.uam.nautaticket.service.HistorialService;
+import ni.edu.uam.nautaticket.service.ReporteService;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.AvailableSettings;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.postgresql.ds.PGSimpleDataSource;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -82,6 +88,71 @@ class AtencionPostgresTest {
     }
 
     @Test
+    void muestraTicketsNuevosYLimitaTresAsignacionesHastaResolver() throws Exception {
+        aplicar(MIGRACION);
+        int primero = ticket("PENDIENTE", TEMPRANO);
+        int segundo = ticket("PENDIENTE", TEMPRANO);
+        int tercero = ticket("PENDIENTE", TEMPRANO);
+        int cuarto = ticket("PENDIENTE", TEMPRANO);
+        var atencion = iniciarHibernate();
+
+        assertEquals(List.of(primero, segundo, tercero, cuarto),
+                atencion.listarPendientes().stream().map(AsignacionTicketDao.TicketFila::idTicket).toList());
+        assertTrue(atencion.listarMisTickets(tecnicoA).isEmpty());
+        assertEquals(0, atencion.contarTicketsActivos(tecnicoA));
+
+        assertEquals(primero, atencion.tomarSiguienteTicket(tecnicoA));
+        assertEquals(segundo, atencion.tomarSiguienteTicket(tecnicoA));
+        assertEquals(tercero, atencion.tomarSiguienteTicket(tecnicoA));
+        assertEquals(3, atencion.contarTicketsActivos(tecnicoA));
+        assertEquals(3, atencion.listarMisTickets(tecnicoA).size());
+        assertEquals(cuarto, atencion.listarPendientes().getFirst().idTicket());
+        assertThrows(IllegalStateException.class, () -> atencion.tomarSiguienteTicket(tecnicoA));
+        assertEquals(3, entero("SELECT COUNT(*) FROM historial_tickets"));
+        assertEquals(cuarto, atencion.listarPendientes().getFirst().idTicket());
+
+        atencion.iniciarAtencion(primero, tecnicoA);
+        assertEquals(3, atencion.contarTicketsActivos(tecnicoA));
+        atencion.resolverTicket(primero, tecnicoA, "Resuelto");
+        assertEquals(2, atencion.contarTicketsActivos(tecnicoA));
+        assertEquals(cuarto, atencion.tomarSiguienteTicket(tecnicoA));
+        assertEquals(3, atencion.contarTicketsActivos(tecnicoA));
+    }
+
+    @Test
+    void dosTomasDelMismoTecnicoSoloPuedenOcuparUltimoEspacio() throws Exception {
+        aplicar(MIGRACION);
+        ticket("PENDIENTE", TEMPRANO);
+        ticket("PENDIENTE", TEMPRANO);
+        int tercero = ticket("PENDIENTE", TEMPRANO);
+        int cuarto = ticket("PENDIENTE", TEMPRANO);
+        var atencion = iniciarHibernate();
+        atencion.tomarSiguienteTicket(tecnicoA);
+        atencion.tomarSiguienteTicket(tecnicoA);
+
+        try (var hilos = Executors.newFixedThreadPool(2)) {
+            var tomaA = hilos.submit(() -> atencion.tomarSiguienteTicket(tecnicoA));
+            var tomaB = hilos.submit(() -> atencion.tomarSiguienteTicket(tecnicoA));
+            int exitos = 0;
+            int rechazos = 0;
+            for (var toma : List.of(tomaA, tomaB)) {
+                try {
+                    assertEquals(tercero, toma.get(10, TimeUnit.SECONDS));
+                    exitos++;
+                } catch (ExecutionException error) {
+                    assertInstanceOf(IllegalStateException.class, error.getCause());
+                    rechazos++;
+                }
+            }
+            assertEquals(1, exitos);
+            assertEquals(1, rechazos);
+        }
+        assertEquals(3, atencion.contarTicketsActivos(tecnicoA));
+        assertEquals(cuarto, atencion.listarPendientes().getFirst().idTicket());
+        assertEquals(3, entero("SELECT COUNT(*) FROM historial_tickets"));
+    }
+
+    @Test
     void siLaPrimeraTomaRevierteElSegundoTecnicoRecibeEseTicket() throws Exception {
         verificarTomaConcurrente(true);
     }
@@ -117,10 +188,15 @@ class AtencionPostgresTest {
         assertEquals("RESUELTO", resuelto.getEstado().getNombre());
         assertEquals("Solución de prueba", resuelto.getSolucion());
         assertNotNull(resuelto.getFechaResolucion());
+        assertEquals(solicitante, resuelto.getSolicitante().getId());
+        assertEquals(tecnicoA, resuelto.getTecnico().getId());
         var asignaciones = sesiones.fromSession(session -> session.createSelectionQuery("""
-                FROM AsignacionTicket a WHERE a.idTicket = :ticket ORDER BY a.idAsignacion
+                SELECT a FROM AsignacionTicket a JOIN FETCH a.ticket JOIN FETCH a.tecnico
+                WHERE a.ticket.idTicket = :ticket ORDER BY a.idAsignacion
                 """, AsignacionTicket.class).setParameter("ticket", ticket).getResultList());
         assertEquals(2, asignaciones.size());
+        assertEquals(ticket, asignaciones.getLast().getTicket().getIdTicket());
+        assertEquals(tecnicoA, asignaciones.getLast().getTecnico().getId());
         assertEquals(LocalDateTime.parse("2026-01-01T11:00:00"), asignaciones.getFirst().getFechaFin());
         assertNotNull(asignaciones.getLast().getFechaFin());
 
@@ -199,6 +275,84 @@ class AtencionPostgresTest {
         assertTrue(error.getMessage().contains("requieren revisión"));
         assertEquals(2, entero("SELECT COUNT(*) FROM asignaciones_ticket WHERE fecha_fin IS NULL"));
         assertEquals(0, entero("SELECT COUNT(*) WHERE to_regclass('ux_asignaciones_ticket_activa') IS NOT NULL"));
+    }
+
+    @Test
+    void reporteFiltraPorInicioPersonalSinDuplicadosYRespetaFechaYEstado() throws Exception {
+        aplicar(MIGRACION);
+        int admin = usuario("adminReporte", "ADMIN");
+        int resuelto = ticket("RESUELTO", TEMPRANO);
+        int cerrado = ticket("CERRADO", "2026-01-02 10:00:00");
+        int soloAsignado = ticket("PENDIENTE", "2026-01-02 11:00:00");
+        int atendidoPorOtro = ticket("EN_PROCESO", "2026-01-02 12:00:00");
+        asignacion(soloAsignado, tecnicoA, "NULL");
+        registrarInicio(resuelto, tecnicoA);
+        registrarInicio(resuelto, tecnicoA);
+        registrarInicio(cerrado, tecnicoA);
+        registrarInicio(atendidoPorOtro, tecnicoB);
+
+        iniciarHibernate();
+        var dao = new ReporteDAO(sesiones);
+
+        assertEquals(List.of(resuelto, cerrado), idsReporte(dao.obtenerTickets(null, null, null, tecnicoA)));
+        assertEquals(List.of(atendidoPorOtro), idsReporte(dao.obtenerTickets(null, null, null, tecnicoB)));
+        assertEquals(4, dao.obtenerTickets(null, null, null, admin).size());
+        assertEquals(List.of(cerrado), idsReporte(dao.obtenerTickets(
+                LocalDate.of(2026, 1, 2), null, null, tecnicoA)));
+        assertEquals(List.of(resuelto), idsReporte(dao.obtenerTickets(
+                null, null, "RESUELTO", tecnicoA)));
+        assertEquals(List.of(cerrado), idsReporte(dao.obtenerTickets(
+                null, LocalDate.of(2026, 1, 3), "CERRADO", tecnicoA)));
+    }
+
+    @Test
+    void reporteRechazaEmpleadoInactivoRolDesconocidoYUsuarioInexistente(@TempDir Path carpeta) throws Exception {
+        aplicar(MIGRACION);
+        ejecutar("INSERT INTO roles (nombre) VALUES ('INVITADO')");
+        int desconocido = usuario("invitadoReporte", "INVITADO");
+        ejecutar("UPDATE usuarios SET activo = FALSE WHERE id_usuario = " + tecnicoA);
+        iniciarHibernate();
+        var dao = new ReporteDAO(sesiones);
+
+        assertThrows(SecurityException.class, () -> dao.obtenerTickets(null, null, null, solicitante));
+        assertThrows(SecurityException.class, () -> dao.obtenerTickets(null, null, null, tecnicoA));
+        assertThrows(SecurityException.class, () -> dao.obtenerTickets(null, null, null, desconocido));
+        assertThrows(SecurityException.class, () -> dao.obtenerTickets(null, null, null, Integer.MAX_VALUE));
+        assertThrows(IllegalArgumentException.class, () -> dao.obtenerTickets(null, null, null, 0));
+        assertThrows(IllegalArgumentException.class, () -> new ReporteService(sesiones, 0));
+        Path destino = carpeta.resolve("empleado.pdf");
+        assertThrows(SecurityException.class, () ->
+                new ReporteService(sesiones, solicitante).generarReporte(null, null, null, destino));
+        assertFalse(Files.exists(destino));
+    }
+
+    @Test
+    void servicioGeneraPdfAutorizado(@TempDir Path carpeta) throws Exception {
+        aplicar(MIGRACION);
+        int ticket = ticket("RESUELTO", TEMPRANO);
+        registrarInicio(ticket, tecnicoA);
+        iniciarHibernate();
+
+        Path destino = carpeta.resolve("atencion-tecnico.pdf");
+        new ReporteService(sesiones, tecnicoA).generarReporte(null, null, null, destino);
+
+        assertTrue(Files.size(destino) > 100);
+        try (var pdf = Files.newInputStream(destino)) {
+            assertArrayEquals("%PDF".getBytes(java.nio.charset.StandardCharsets.US_ASCII),
+                    pdf.readNBytes(4));
+        }
+    }
+
+    private List<Integer> idsReporte(List<ReporteTicketDTO> tickets) {
+        return tickets.stream().map(ReporteTicketDTO::getIdTicket).toList();
+    }
+
+    private void registrarInicio(int ticket, int tecnico) throws SQLException {
+        ejecutar("""
+                INSERT INTO historial_tickets
+                    (id_ticket, id_usuario, estado_anterior, estado_nuevo)
+                VALUES (%d, %d, 'PENDIENTE', 'EN_PROCESO')
+                """.formatted(ticket, tecnico));
     }
 
     private void verificarTomaConcurrente(boolean revertirPrimera) throws Exception {

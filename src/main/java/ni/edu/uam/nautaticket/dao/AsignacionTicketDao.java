@@ -1,4 +1,3 @@
-
 package ni.edu.uam.nautaticket.dao;
 
 import ni.edu.uam.nautaticket.util.HibernateUtil;
@@ -13,6 +12,13 @@ public class AsignacionTicketDao {
 
     private final SessionFactory sessionFactory;
 
+    public record TicketFila(
+            int idTicket,
+            String titulo,
+            LocalDateTime fechaCreacion,
+            String estado
+    ) {}
+
     public AsignacionTicketDao() {
         this(HibernateUtil.getSessionFactory());
     }
@@ -21,20 +27,13 @@ public class AsignacionTicketDao {
         this.sessionFactory = sessionFactory;
     }
 
-    public record TicketFila(
-            int idTicket,
-            String titulo,
-            LocalDateTime fechaCreacion,
-            String estado
-    ) {}
-
     public List<TicketFila> listarPendientes() {
         String sql = """
                 SELECT t.id_ticket, t.titulo,
                        t.fecha_creacion, e.nombre
                 FROM tickets t
                 JOIN estados_ticket e
-                    ON t.id_estado = e.id_estado
+                  ON e.id_estado = t.id_estado
                 WHERE e.nombre = 'PENDIENTE'
                   AND t.id_tecnico IS NULL
                   AND NOT EXISTS (
@@ -43,16 +42,13 @@ public class AsignacionTicketDao {
                       WHERE a.id_ticket = t.id_ticket
                         AND a.fecha_fin IS NULL
                   )
-                ORDER BY t.fecha_creacion ASC,
-                         t.id_ticket ASC
+                ORDER BY t.fecha_creacion, t.id_ticket
                 """;
 
         try (Session session = sessionFactory.openSession()) {
-            List<Object[]> resultados =
-                    session.createNativeQuery(sql, Object[].class)
-                            .getResultList();
-
-            return resultados.stream()
+            return session.createNativeQuery(sql, Object[].class)
+                    .getResultList()
+                    .stream()
                     .map(this::convertirFila)
                     .toList();
         }
@@ -64,32 +60,50 @@ public class AsignacionTicketDao {
                        t.fecha_creacion, e.nombre
                 FROM tickets t
                 JOIN estados_ticket e
-                    ON t.id_estado = e.id_estado
+                  ON e.id_estado = t.id_estado
                 WHERE t.id_tecnico = :tecnico
                   AND e.nombre IN ('PENDIENTE', 'EN_PROCESO')
-                ORDER BY t.fecha_creacion ASC,
-                         t.id_ticket ASC
+                ORDER BY t.fecha_creacion, t.id_ticket
                 """;
 
         try (Session session = sessionFactory.openSession()) {
-            List<Object[]> resultados =
-                    session.createNativeQuery(sql, Object[].class)
-                            .setParameter("tecnico", idTecnico)
-                            .getResultList();
-
-            return resultados.stream()
+            return session.createNativeQuery(sql, Object[].class)
+                    .setParameter("tecnico", idTecnico)
+                    .getResultList()
+                    .stream()
                     .map(this::convertirFila)
                     .toList();
+        }
+    }
+
+    public long contarActivas(Session session, int idTecnico) {
+        Long total = session.createNativeQuery("""
+                SELECT COUNT(*)
+                FROM asignaciones_ticket
+                WHERE id_tecnico = :tecnico
+                  AND fecha_fin IS NULL
+                """, Long.class)
+                .setParameter("tecnico", idTecnico)
+                .getSingleResult();
+
+        return total.longValue();
+    }
+
+    public long contarActivas(int idTecnico) {
+        try (Session session = sessionFactory.openSession()) {
+            return contarActivas(session, idTecnico);
         }
     }
 
     public void bloquearColaParaAsignar(Session session) {
         session.doWork(connection -> {
             try (var statement = connection.createStatement()) {
-                // La consulta posterior al bloqueo debe ver el commit de la toma anterior.
-                statement.execute("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
-                // 0x4E415554 identifica a NautaTicket, y 1 a la cola FIFO.
-                statement.execute("SELECT pg_advisory_xact_lock(1312904532, 1)");
+                statement.execute(
+                        "SET TRANSACTION ISOLATION LEVEL READ COMMITTED"
+                );
+                statement.execute(
+                        "SELECT pg_advisory_xact_lock(1312904532, 1)"
+                );
             }
         });
     }
@@ -99,7 +113,7 @@ public class AsignacionTicketDao {
                 SELECT t.id_ticket
                 FROM tickets t
                 JOIN estados_ticket e
-                    ON t.id_estado = e.id_estado
+                  ON e.id_estado = t.id_estado
                 WHERE e.nombre = 'PENDIENTE'
                   AND t.id_tecnico IS NULL
                   AND NOT EXISTS (
@@ -114,21 +128,21 @@ public class AsignacionTicketDao {
                 FOR UPDATE OF t
                 """;
 
-        return session.createNativeQuery(sql, Integer.class).uniqueResult();
+        return session.createNativeQuery(sql, Integer.class)
+                .uniqueResult();
     }
 
     private TicketFila convertirFila(Object[] fila) {
-        Object fecha = fila[2];
+        Object valorFecha = fila[2];
 
-        LocalDateTime fechaCreacion =
-                fecha instanceof LocalDateTime local
-                        ? local
-                        : ((Timestamp) fecha).toLocalDateTime();
+        LocalDateTime fecha = valorFecha instanceof LocalDateTime fechaLocal
+                ? fechaLocal
+                : ((Timestamp) valorFecha).toLocalDateTime();
 
         return new TicketFila(
                 ((Number) fila[0]).intValue(),
                 (String) fila[1],
-                fechaCreacion,
+                fecha,
                 (String) fila[3]
         );
     }

@@ -19,15 +19,17 @@ public class Ticket {
     @Column(name = "id_ticket")
     private Integer idTicket;
 
-    @Column(name = "id_solicitante", nullable = false)
-    private Integer idSolicitante;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_solicitante", nullable = false)
+    private Usuario solicitante;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_categoria", nullable = false)
     private Categoria categoria;
 
-    @Column(name = "id_tecnico")
-    private Integer idTecnico;
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "id_tecnico")
+    private Usuario tecnico;
 
     @Column(name = "titulo", nullable = false, length = 150)
     private String titulo;
