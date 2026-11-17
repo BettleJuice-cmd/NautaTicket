@@ -1,6 +1,7 @@
 package ni.edu.uam.nautaticket.util;
 
 import ni.edu.uam.nautaticket.dao.TicketDAO;
+import ni.edu.uam.nautaticket.dao.AsignacionTicketDao;
 import ni.edu.uam.nautaticket.dao.ReporteDAO;
 import ni.edu.uam.nautaticket.dto.ReporteTicketDTO;
 import ni.edu.uam.nautaticket.model.AsignacionTicket;
@@ -84,6 +85,71 @@ class AtencionPostgresTest {
     @Test
     void dosTecnicosEsperanYRespetanFechaEId() throws Exception {
         verificarTomaConcurrente(false);
+    }
+
+    @Test
+    void muestraTicketsNuevosYLimitaTresAsignacionesHastaResolver() throws Exception {
+        aplicar(MIGRACION);
+        int primero = ticket("PENDIENTE", TEMPRANO);
+        int segundo = ticket("PENDIENTE", TEMPRANO);
+        int tercero = ticket("PENDIENTE", TEMPRANO);
+        int cuarto = ticket("PENDIENTE", TEMPRANO);
+        var atencion = iniciarHibernate();
+
+        assertEquals(List.of(primero, segundo, tercero, cuarto),
+                atencion.listarPendientes().stream().map(AsignacionTicketDao.TicketFila::idTicket).toList());
+        assertTrue(atencion.listarMisTickets(tecnicoA).isEmpty());
+        assertEquals(0, atencion.contarTicketsActivos(tecnicoA));
+
+        assertEquals(primero, atencion.tomarSiguienteTicket(tecnicoA));
+        assertEquals(segundo, atencion.tomarSiguienteTicket(tecnicoA));
+        assertEquals(tercero, atencion.tomarSiguienteTicket(tecnicoA));
+        assertEquals(3, atencion.contarTicketsActivos(tecnicoA));
+        assertEquals(3, atencion.listarMisTickets(tecnicoA).size());
+        assertEquals(cuarto, atencion.listarPendientes().getFirst().idTicket());
+        assertThrows(IllegalStateException.class, () -> atencion.tomarSiguienteTicket(tecnicoA));
+        assertEquals(3, entero("SELECT COUNT(*) FROM historial_tickets"));
+        assertEquals(cuarto, atencion.listarPendientes().getFirst().idTicket());
+
+        atencion.iniciarAtencion(primero, tecnicoA);
+        assertEquals(3, atencion.contarTicketsActivos(tecnicoA));
+        atencion.resolverTicket(primero, tecnicoA, "Resuelto");
+        assertEquals(2, atencion.contarTicketsActivos(tecnicoA));
+        assertEquals(cuarto, atencion.tomarSiguienteTicket(tecnicoA));
+        assertEquals(3, atencion.contarTicketsActivos(tecnicoA));
+    }
+
+    @Test
+    void dosTomasDelMismoTecnicoSoloPuedenOcuparUltimoEspacio() throws Exception {
+        aplicar(MIGRACION);
+        ticket("PENDIENTE", TEMPRANO);
+        ticket("PENDIENTE", TEMPRANO);
+        int tercero = ticket("PENDIENTE", TEMPRANO);
+        int cuarto = ticket("PENDIENTE", TEMPRANO);
+        var atencion = iniciarHibernate();
+        atencion.tomarSiguienteTicket(tecnicoA);
+        atencion.tomarSiguienteTicket(tecnicoA);
+
+        try (var hilos = Executors.newFixedThreadPool(2)) {
+            var tomaA = hilos.submit(() -> atencion.tomarSiguienteTicket(tecnicoA));
+            var tomaB = hilos.submit(() -> atencion.tomarSiguienteTicket(tecnicoA));
+            int exitos = 0;
+            int rechazos = 0;
+            for (var toma : List.of(tomaA, tomaB)) {
+                try {
+                    assertEquals(tercero, toma.get(10, TimeUnit.SECONDS));
+                    exitos++;
+                } catch (ExecutionException error) {
+                    assertInstanceOf(IllegalStateException.class, error.getCause());
+                    rechazos++;
+                }
+            }
+            assertEquals(1, exitos);
+            assertEquals(1, rechazos);
+        }
+        assertEquals(3, atencion.contarTicketsActivos(tecnicoA));
+        assertEquals(cuarto, atencion.listarPendientes().getFirst().idTicket());
+        assertEquals(3, entero("SELECT COUNT(*) FROM historial_tickets"));
     }
 
     @Test
