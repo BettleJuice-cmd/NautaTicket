@@ -1,5 +1,9 @@
+
 package ni.edu.uam.nautaticket.controller;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
@@ -8,10 +12,10 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.util.Duration;
 
 import ni.edu.uam.nautaticket.dao.AsignacionTicketDao.TicketFila;
 import ni.edu.uam.nautaticket.service.AtencionService;
@@ -23,6 +27,8 @@ public class AtencionController {
 
     private static final System.Logger LOG =
             System.getLogger(AtencionController.class.getName());
+
+    private static final int INTERVALO_ACTUALIZACION = 5;
 
     @FXML private TableView<TicketFila> tablaPendientes;
     @FXML private TableView<TicketFila> tablaMisTickets;
@@ -58,6 +64,8 @@ public class AtencionController {
     private final DateTimeFormatter formato =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
+    private Timeline actualizacionAutomatica;
+
     private record Resultado(
             List<TicketFila> pendientes,
             List<TicketFila> asignados,
@@ -67,14 +75,19 @@ public class AtencionController {
 
     @FunctionalInterface
     private interface Operacion {
-        String ejecutar(AtencionService servicio, int idTecnico);
+        String ejecutar(
+                AtencionService servicio,
+                int idTecnico
+        );
     }
 
     @FXML
     private void initialize() {
+
         BooleanBinding ocupada = tomaEnCurso();
 
         botonActualizar.disableProperty().bind(ocupada);
+
         botonTomar.disableProperty().bind(
                 ocupada.or(capacidadLlena)
         );
@@ -100,7 +113,9 @@ public class AtencionController {
 
         columnaPendienteFecha.setCellValueFactory(
                 fila -> new ReadOnlyStringWrapper(
-                        fila.getValue().fechaCreacion().format(formato)
+                        fila.getValue()
+                                .fechaCreacion()
+                                .format(formato)
                 )
         );
 
@@ -126,6 +141,8 @@ public class AtencionController {
                 "Mis tickets activos: -- / "
                         + AtencionService.MAX_TICKETS_ACTIVOS
         );
+
+        configurarActualizacionAutomatica();
     }
 
     public BooleanBinding tomaEnCurso() {
@@ -133,7 +150,11 @@ public class AtencionController {
     }
 
     public void setIdTecnico(int idTecnico) {
-        campoTecnico.setText(String.valueOf(idTecnico));
+
+        campoTecnico.setText(
+                String.valueOf(idTecnico)
+        );
+
         campoTecnico.setDisable(true);
 
         if (servicio != null) {
@@ -142,6 +163,7 @@ public class AtencionController {
     }
 
     public void setServicio(AtencionService servicio) {
+
         this.servicio = servicio;
 
         if (campoTecnico.getText() != null
@@ -151,6 +173,7 @@ public class AtencionController {
     }
 
     private int tecnico() {
+
         try {
             int id = Integer.parseInt(
                     campoTecnico.getText().trim()
@@ -163,6 +186,7 @@ public class AtencionController {
             return id;
 
         } catch (NumberFormatException e) {
+
             throw new IllegalArgumentException(
                     "El ID del técnico no es válido."
             );
@@ -170,6 +194,7 @@ public class AtencionController {
     }
 
     private TicketFila seleccionado() {
+
         TicketFila fila = tablaMisTickets
                 .getSelectionModel()
                 .getSelectedItem();
@@ -185,46 +210,64 @@ public class AtencionController {
 
     @FXML
     private void actualizar() {
-        ejecutarOperacion((actual, tecnicoId) ->
-                "Listas actualizadas."
+
+        ejecutarOperacion(
+                (actual, tecnicoId) ->
+                        "Listas actualizadas.",
+                false,
+                false
         );
     }
 
     @FXML
     private void tomarSiguiente() {
+
         ejecutarOperacion((actual, tecnicoId) -> {
-            int idTicket = actual.tomarSiguienteTicket(tecnicoId);
+
+            int idTicket = actual.tomarSiguienteTicket(
+                    tecnicoId
+            );
 
             return "Ticket #" + idTicket
                     + " asignado correctamente.";
-        });
+
+        }, false, false);
     }
 
     @FXML
     private void iniciar() {
+
         final int idTicket;
 
         try {
             idTicket = seleccionado().idTicket();
+
         } catch (IllegalArgumentException e) {
             mensaje.setText(e.getMessage());
             return;
         }
 
         ejecutarOperacion((actual, tecnicoId) -> {
-            actual.iniciarAtencion(idTicket, tecnicoId);
+
+            actual.iniciarAtencion(
+                    idTicket,
+                    tecnicoId
+            );
 
             return "Atención iniciada para el ticket #"
                     + idTicket + ".";
-        });
+
+        }, false, false);
     }
 
     @FXML
     private void resolver() {
+
         final int idTicket;
 
         try {
             idTicket = seleccionado().idTicket();
+
         } catch (IllegalArgumentException e) {
             mensaje.setText(e.getMessage());
             return;
@@ -233,13 +276,16 @@ public class AtencionController {
         final String solucion = campoSolucion.getText();
 
         if (solucion == null || solucion.isBlank()) {
+
             mensaje.setText(
                     "Debes escribir la solución del ticket."
             );
+
             return;
         }
 
         ejecutarOperacion((actual, tecnicoId) -> {
+
             actual.resolverTicket(
                     idTicket,
                     tecnicoId,
@@ -248,17 +294,69 @@ public class AtencionController {
 
             return "Ticket #" + idTicket
                     + " resuelto correctamente.";
-        }, true);
+
+        }, true, false);
     }
 
-    private void ejecutarOperacion(Operacion operacion) {
-        ejecutarOperacion(operacion, false);
+    // Actualización automática cada cinco segundos.
+    private void configurarActualizacionAutomatica() {
+
+        actualizacionAutomatica = new Timeline(
+                new KeyFrame(
+                        Duration.seconds(INTERVALO_ACTUALIZACION),
+                        evento -> actualizarEnSegundoPlano()
+                )
+        );
+
+        actualizacionAutomatica.setCycleCount(
+                Animation.INDEFINITE
+        );
+
+        // Iniciar cuando la pantalla se incorpora a JavaFX
+        // y detener cuando se retira.
+        tablaPendientes.sceneProperty().addListener(
+                (observable, anterior, nueva) -> {
+
+                    if (nueva == null) {
+
+                        actualizacionAutomatica.stop();
+
+                    } else {
+
+                        actualizacionAutomatica.play();
+                    }
+                }
+        );
+    }
+
+    private void actualizarEnSegundoPlano() {
+
+        // No iniciar otra operación si hay una ejecutándose.
+        if (tareaActiva.get() != null) {
+            return;
+        }
+
+        if (servicio == null) {
+            return;
+        }
+
+        if (tablaPendientes.getScene() == null) {
+            return;
+        }
+
+        ejecutarOperacion(
+                (actual, tecnicoId) -> null,
+                false,
+                true
+        );
     }
 
     private void ejecutarOperacion(
             Operacion operacion,
-            boolean limpiarSolucion
+            boolean limpiarSolucion,
+            boolean silenciosa
     ) {
+
         if (tareaActiva.get() != null) {
             return;
         }
@@ -266,9 +364,13 @@ public class AtencionController {
         final AtencionService actual = servicio;
 
         if (actual == null) {
-            mensaje.setText(
-                    "El servicio de atención no está conectado."
-            );
+
+            if (!silenciosa) {
+                mensaje.setText(
+                        "El servicio de atención no está conectado."
+                );
+            }
+
             return;
         }
 
@@ -276,14 +378,21 @@ public class AtencionController {
 
         try {
             idTecnico = tecnico();
+
         } catch (IllegalArgumentException e) {
-            mensaje.setText(e.getMessage());
+
+            if (!silenciosa) {
+                mensaje.setText(e.getMessage());
+            }
+
             return;
         }
 
         Task<Resultado> tarea = new Task<>() {
+
             @Override
             protected Resultado call() {
+
                 String aviso = operacion.ejecutar(
                         actual,
                         idTecnico
@@ -295,9 +404,8 @@ public class AtencionController {
                 List<TicketFila> asignados =
                         actual.listarMisTickets(idTecnico);
 
-                int activos = actual.contarTicketsActivos(
-                        idTecnico
-                );
+                int activos =
+                        actual.contarTicketsActivos(idTecnico);
 
                 return new Resultado(
                         pendientes,
@@ -309,18 +417,34 @@ public class AtencionController {
         };
 
         tarea.setOnSucceeded(evento -> {
+
             Resultado resultado = tarea.getValue();
 
-            tablaPendientes.setItems(
-                    FXCollections.observableArrayList(
-                            resultado.pendientes()
-                    )
+            // Recordar el ticket seleccionado.
+            Integer pendienteSeleccionado =
+                    obtenerIdSeleccionado(tablaPendientes);
+
+            Integer mioSeleccionado =
+                    obtenerIdSeleccionado(tablaMisTickets);
+
+            // Actualizar sin sustituir el TableView.
+            tablaPendientes.getItems().setAll(
+                    resultado.pendientes()
             );
 
-            tablaMisTickets.setItems(
-                    FXCollections.observableArrayList(
-                            resultado.asignados()
-                    )
+            tablaMisTickets.getItems().setAll(
+                    resultado.asignados()
+            );
+
+            // Recuperar selecciones si siguen existiendo.
+            restaurarSeleccion(
+                    tablaPendientes,
+                    pendienteSeleccionado
+            );
+
+            restaurarSeleccion(
+                    tablaMisTickets,
+                    mioSeleccionado
             );
 
             actualizarCapacidad(resultado.activos());
@@ -329,58 +453,136 @@ public class AtencionController {
                 campoSolucion.clear();
             }
 
-            mensaje.setText(resultado.aviso());
+            // No sobrescribir mensajes durante
+            // una actualización automática.
+            if (!silenciosa && resultado.aviso() != null) {
+                mensaje.setText(resultado.aviso());
+            }
         });
 
         tarea.setOnFailed(evento -> {
+
             Throwable error = tarea.getException();
-            LOG.log(System.Logger.Level.ERROR, "Error en Atención FIFO", error);
+
+            LOG.log(
+                    System.Logger.Level.ERROR,
+                    "Error en Atención FIFO",
+                    error
+            );
 
             if (error instanceof IllegalArgumentException
                     || error instanceof IllegalStateException) {
+
                 mensaje.setText(error.getMessage());
+
             } else {
+
                 mensaje.setText(
-                        "No se pudo completar la operación. "
-                                + "Revisa la conexión."
+                        silenciosa
+                                ? "No se pudo actualizar la cola automáticamente."
+                                : "No se pudo completar la operación. Revisa la conexión."
                 );
             }
         });
 
         tarea.setOnCancelled(evento -> {
-            mensaje.setText(
-                    "Cancelando operación..."
-            );
+
+            if (!silenciosa) {
+                mensaje.setText(
+                        "Cancelando operación..."
+                );
+            }
         });
 
         tareaActiva.set(tarea);
-        mensaje.setText("Procesando operación...");
+
+        if (!silenciosa) {
+            mensaje.setText("Procesando operación...");
+        }
 
         Thread hilo = new Thread(() -> {
+
             try {
                 tarea.run();
+
             } finally {
+
                 Platform.runLater(() -> {
-                    if (tarea.isCancelled()) {
-                        mensaje.setText("Operación cancelada. Actualiza las listas para comprobar el resultado.");
+
+                    if (tarea.isCancelled() && !silenciosa) {
+
+                        mensaje.setText(
+                                "Operación cancelada. Actualiza las listas para comprobar el resultado."
+                        );
                     }
+
                     tareaActiva.set(null);
                 });
             }
-        }, "nautaticket-atencion");
+
+        }, silenciosa
+                ? "nautaticket-actualizacion-auto"
+                : "nautaticket-atencion");
 
         hilo.setDaemon(true);
+
         try {
             hilo.start();
+
         } catch (RuntimeException error) {
+
             tareaActiva.set(null);
-            LOG.log(System.Logger.Level.ERROR, "No se pudo iniciar la operación de atención", error);
-            mensaje.setText("No se pudo iniciar la operación. Inténtalo de nuevo.");
+
+            LOG.log(
+                    System.Logger.Level.ERROR,
+                    "No se pudo iniciar la operación de atención",
+                    error
+            );
+
+            if (!silenciosa) {
+                mensaje.setText(
+                        "No se pudo iniciar la operación. Inténtalo de nuevo."
+                );
+            }
+        }
+    }
+
+    private Integer obtenerIdSeleccionado(
+            TableView<TicketFila> tabla
+    ) {
+
+        TicketFila seleccionado = tabla
+                .getSelectionModel()
+                .getSelectedItem();
+
+        return seleccionado == null
+                ? null
+                : seleccionado.idTicket();
+    }
+
+    private void restaurarSeleccion(
+            TableView<TicketFila> tabla,
+            Integer idTicket
+    ) {
+
+        if (idTicket == null) {
+            return;
+        }
+
+        for (TicketFila fila : tabla.getItems()) {
+
+            if (fila.idTicket() == idTicket) {
+
+                tabla.getSelectionModel().select(fila);
+                return;
+            }
         }
     }
 
     private void actualizarCapacidad(int activos) {
-        int maximo = AtencionService.MAX_TICKETS_ACTIVOS;
+
+        int maximo =
+                AtencionService.MAX_TICKETS_ACTIVOS;
 
         etiquetaCapacidad.setText(
                 "Mis tickets activos: "
@@ -388,6 +590,7 @@ public class AtencionController {
         );
 
         boolean llena = activos >= maximo;
+
         capacidadLlena.set(llena);
 
         etiquetaCapacidad.setStyle(
