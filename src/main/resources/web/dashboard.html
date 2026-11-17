@@ -2,13 +2,11 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
     <title>NautaTicket | Panel principal</title>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
-
         :root {
             --bg: #000000;
             --surface: #0d0d0d;
@@ -19,13 +17,11 @@
             --purple: #9783db;
             --purple-hover: #b0a0ec;
             --blue: #7194d2;
-            --font: "IBM Plex Sans", "Segoe UI", sans-serif;
-            --mono: "IBM Plex Mono", Consolas, monospace;
+            --font: "Segoe UI", Tahoma, Arial, sans-serif;
+            --mono: Consolas, "Courier New", monospace;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         html, body {
             margin: 0;
@@ -35,29 +31,10 @@
             font-family: var(--font);
         }
 
-        button, input, select {
-            font: inherit;
-        }
-
-        button {
-            cursor: pointer;
-        }
-
-        button:focus-visible,
-        input:focus-visible,
-        select:focus-visible {
-            outline: 2px solid var(--purple);
-            outline-offset: 3px;
-        }
-
-        button:disabled {
-            cursor: not-allowed;
-            opacity: 0.55;
-        }
-
-        [hidden] {
-            display: none !important;
-        }
+        button, input, select { font: inherit; }
+        button { cursor: pointer; }
+        button:disabled { cursor: not-allowed; opacity: .55; }
+        [hidden] { display: none !important; }
 
         .workspace {
             display: grid;
@@ -103,7 +80,7 @@
         .logo-text {
             font-size: 20px;
             font-weight: 600;
-            letter-spacing: -0.5px;
+            letter-spacing: -.5px;
         }
 
         .workspace-nav {
@@ -135,10 +112,12 @@
             font-size: 13px;
             font-weight: 500;
             text-align: left;
-            transition: background 150ms, color 150ms;
+            transition: background .15s, color .15s;
         }
 
-        .nav-item svg {
+        .nav-item svg,
+        .logout-button svg {
+            display: block;
             width: 17px;
             height: 17px;
             min-width: 17px;
@@ -187,9 +166,7 @@
             font-weight: 600;
         }
 
-        .user-details {
-            min-width: 0;
-        }
+        .user-details { min-width: 0; }
 
         .user-details strong,
         .user-details span {
@@ -271,7 +248,7 @@
             margin: 0 0 9px;
             font-size: 25px;
             font-weight: 600;
-            letter-spacing: -0.6px;
+            letter-spacing: -.6px;
         }
 
         .page-heading p {
@@ -560,6 +537,8 @@
             }
         }
     </style>
+
+    <link rel="stylesheet" href="css/pulido.css">
 </head>
 
 <body>
@@ -576,7 +555,8 @@
             <span class="logo-text">NautaTicket</span>
         </div>
 
-        <nav class="workspace-nav" aria-label="Navegación principal">
+        <nav class="workspace-nav"
+             aria-label="Navegación principal">
 
             <p class="nav-caption">Espacio de trabajo</p>
 
@@ -605,7 +585,7 @@
             <button class="nav-item"
                     type="button"
                     data-section="atencion"
-                    data-roles="Administrador,Soporte técnico"
+                    data-roles="Soporte técnico"
                     hidden>
                 <svg viewBox="0 0 24 24">
                     <circle cx="12" cy="12" r="8"/>
@@ -652,20 +632,21 @@
                 <svg viewBox="0 0 24 24">
                     <path d="M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                     <circle cx="9" cy="7" r="4"/>
-                    <path d="M20 20v-2a4 4 0 0 0-3-3.87"/>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    <path d="M20 20v-2a4 4 0 0 1 0 7.75"/>
                 </svg>
                 Administración
             </button>
-
         </nav>
 
         <div class="sidebar-footer">
 
             <div class="sidebar-user">
                 <span class="user-avatar">N</span>
+
                 <div class="user-details">
-                    <strong id="userName">Sin sesión conectada</strong>
+                    <strong id="userName">
+                        Sin sesión conectada
+                    </strong>
                     <span id="userRole">Vista previa</span>
                 </div>
             </div>
@@ -681,7 +662,6 @@
                 </svg>
                 Cerrar sesión
             </button>
-
         </div>
     </aside>
 
@@ -689,7 +669,8 @@
 
         <header class="workspace-topbar">
             <div class="workspace-path">
-                NautaTicket /
+                <span>NautaTicket</span>
+                <span class="workspace-separator">/</span>
                 <strong id="currentSection">Resumen</strong>
             </div>
 
@@ -705,8 +686,12 @@
                 <div class="page-heading">
                     <div>
                         <h1>Resumen general</h1>
-                        <p>Información general de las solicitudes de soporte.</p>
+                        <p>
+                            Información general de las solicitudes
+                            de soporte.
+                        </p>
                     </div>
+
                     <button class="button button-primary"
                             type="button"
                             data-go="tickets">
@@ -715,32 +700,54 @@
                 </div>
 
                 <div class="metrics-grid">
+
                     <article class="metric">
-                        <span class="metric-label">Total de tickets</span>
-                        <strong class="metric-value" id="totalTickets">—</strong>
-                        <span class="metric-hint">Sin datos conectados</span>
+                        <span class="metric-label">
+                            Total de tickets
+                        </span>
+                        <strong class="metric-value"
+                                id="totalTickets">—</strong>
+                        <span class="metric-hint">
+                            Solicitudes disponibles
+                        </span>
                     </article>
 
                     <article class="metric">
-                        <span class="metric-label">Pendientes</span>
-                        <strong class="metric-value" id="pendingTickets">—</strong>
-                        <span class="metric-hint">Por atender</span>
+                        <span class="metric-label">
+                            Pendientes
+                        </span>
+                        <strong class="metric-value"
+                                id="pendingTickets">—</strong>
+                        <span class="metric-hint">
+                            Por atender
+                        </span>
                     </article>
 
                     <article class="metric">
-                        <span class="metric-label">En atención</span>
-                        <strong class="metric-value" id="activeTickets">—</strong>
-                        <span class="metric-hint">En proceso</span>
+                        <span class="metric-label">
+                            En atención
+                        </span>
+                        <strong class="metric-value"
+                                id="activeTickets">—</strong>
+                        <span class="metric-hint">
+                            En proceso
+                        </span>
                     </article>
 
                     <article class="metric">
-                        <span class="metric-label">Resueltos</span>
-                        <strong class="metric-value" id="resolvedTickets">—</strong>
-                        <span class="metric-hint">Atención completada</span>
+                        <span class="metric-label">
+                            Resueltos
+                        </span>
+                        <strong class="metric-value"
+                                id="resolvedTickets">—</strong>
+                        <span class="metric-hint">
+                            Atención completada
+                        </span>
                     </article>
                 </div>
 
                 <div class="content-panel">
+
                     <div class="panel-heading">
                         <div>
                             <h2>Solicitudes recientes</h2>
@@ -759,11 +766,12 @@
                                 <th>Fecha</th>
                             </tr>
                             </thead>
+
                             <tbody id="recentTickets">
                             <tr>
                                 <td colspan="5" class="empty-state">
-                                    Los registros aparecerán cuando
-                                    conectemos los servicios Java.
+                                    Los registros aparecerán al
+                                    cargar el módulo de tickets.
                                 </td>
                             </tr>
                             </tbody>
@@ -772,37 +780,44 @@
                 </div>
             </section>
 
-            <section id="tickets" class="workspace-section" hidden>
+            <section id="tickets"
+                     class="workspace-section"
+                     hidden>
+
                 <div class="page-heading">
                     <div>
                         <h1>Gestión de tickets</h1>
                         <p>Registro y seguimiento de solicitudes.</p>
                     </div>
                 </div>
+
                 <div class="simple-note">
                     <h2>Módulo de tickets</h2>
                     <p>
-                        Integraremos aquí el formulario de registro,
-                        las consultas y los filtros de TicketService.
+                        Preparando la conexión con los
+                        servicios de tickets.
                     </p>
                 </div>
             </section>
 
             <section id="atencion"
                      class="workspace-section"
-                     data-roles="Administrador,Soporte técnico"
+                     data-roles="Soporte técnico"
                      hidden>
+
                 <div class="page-heading">
                     <div>
                         <h1>Atención de solicitudes</h1>
                         <p>Gestión de tickets mediante FIFO.</p>
                     </div>
                 </div>
+
                 <div class="simple-note">
                     <h2>Centro de atención</h2>
                     <p>
-                        Aquí se integrarán las funciones de asignación,
-                        inicio de atención y resolución de tickets.
+                        La asignación, el inicio de atención
+                        y la resolución estarán disponibles
+                        únicamente para los técnicos TI.
                     </p>
                 </div>
             </section>
@@ -811,17 +826,19 @@
                      class="workspace-section"
                      data-roles="Administrador,Soporte técnico"
                      hidden>
+
                 <div class="page-heading">
                     <div>
                         <h1>Historial</h1>
                         <p>Registro de cambios en los tickets.</p>
                     </div>
                 </div>
+
                 <div class="simple-note">
                     <h2>Historial de movimientos</h2>
                     <p>
-                        Mostraremos aquí los cambios registrados
-                        por el servicio de historial.
+                        Esta sección se conectará con
+                        HistorialService.
                     </p>
                 </div>
             </section>
@@ -830,22 +847,22 @@
                      class="workspace-section"
                      data-roles="Administrador"
                      hidden>
+
                 <div class="page-heading">
                     <div>
                         <h1>Reportes</h1>
                         <p>Generación de documentos PDF.</p>
                     </div>
                 </div>
+
                 <div class="simple-note">
                     <h2>Reportes PDF</h2>
                     <p>
-                        Integraremos aquí la generación de reportes
-                        mediante ReporteService y JasperReports.
+                        Esta sección se conectará con
+                        ReporteService y JasperReports.
                     </p>
                 </div>
             </section>
-
-            <!-- ADMINISTRACIÓN -->
 
             <section id="administracion"
                      class="workspace-section"
@@ -856,13 +873,14 @@
                     <div>
                         <h1>Administración</h1>
                         <p>
-                            Gestión de usuarios, roles y departamentos
-                            del sistema.
+                            Gestión de usuarios, roles y
+                            departamentos del sistema.
                         </p>
                     </div>
                 </div>
 
                 <div class="admin-summary">
+
                     <article class="admin-stat">
                         <span>Usuarios registrados</span>
                         <strong id="adminTotalUsuarios">—</strong>
@@ -887,11 +905,11 @@
                         <circle cx="12" cy="12" r="9"/>
                         <path d="M12 11v6M12 7h.01"/>
                     </svg>
+
                     <span>
-                        La interfaz de administración ya está preparada.
-                        Las operaciones permanecerán deshabilitadas hasta
-                        conectarlas con AdministracionService y validar
-                        los permisos del administrador en Java.
+                        La administración utiliza los servicios
+                        Java y verifica los permisos antes
+                        de realizar modificaciones.
                     </span>
                 </div>
 
@@ -909,7 +927,8 @@
 
                     <div style="padding: 0 22px;">
 
-                        <div class="tabs" role="tablist"
+                        <div class="tabs"
+                             role="tablist"
                              aria-label="Áreas de administración">
 
                             <button class="tab active"
@@ -934,14 +953,16 @@
                         </div>
                     </div>
 
-                    <div id="adminUsuarios" role="tabpanel"
+                    <div id="adminUsuarios"
+                         role="tabpanel"
                          aria-labelledby="tabUsuarios">
 
                         <div class="panel-heading">
                             <div>
                                 <h2>Usuarios del sistema</h2>
                                 <p>
-                                    Consulta y administración de cuentas.
+                                    Consulta y administración
+                                    de cuentas.
                                 </p>
                             </div>
 
@@ -966,11 +987,12 @@
                                     <th>Acciones</th>
                                 </tr>
                                 </thead>
+
                                 <tbody id="adminUsuariosBody">
                                 <tr>
-                                    <td colspan="7" class="empty-state">
-                                        La lista de usuarios estará disponible
-                                        al conectar AdministracionService.
+                                    <td colspan="7"
+                                        class="empty-state">
+                                        Cargando usuarios...
                                     </td>
                                 </tr>
                                 </tbody>
@@ -1011,9 +1033,9 @@
 
                                 <tbody id="adminDepartamentosBody">
                                 <tr>
-                                    <td colspan="3" class="empty-state">
-                                        Los departamentos aparecerán
-                                        al conectar el servicio Java.
+                                    <td colspan="3"
+                                        class="empty-state">
+                                        Cargando departamentos...
                                     </td>
                                 </tr>
                                 </tbody>

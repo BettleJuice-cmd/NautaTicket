@@ -7,8 +7,6 @@
     <title>NautaTicket | Acceso</title>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
-
         :root {
             --bg: #000000;
             --surface: #0d0d0d;
@@ -18,7 +16,7 @@
             --muted: #9a9aa2;
             --purple: #9783db;
             --purple-hover: #b0a0ec;
-            --font: "IBM Plex Sans", "Segoe UI", sans-serif;
+            --font: "Segoe UI", Tahoma, Arial, sans-serif;
         }
 
         * {
@@ -51,8 +49,6 @@
             display: none !important;
         }
 
-        /* Estructura */
-
         .access-layout {
             display: grid;
             grid-template-columns: 250px minmax(0, 1fr);
@@ -68,8 +64,6 @@
             background: #000000;
             border-right: 1px solid #242424;
         }
-
-        /* Logotipo */
 
         .logo {
             display: flex;
@@ -103,8 +97,6 @@
             letter-spacing: -0.5px;
         }
 
-        /* Barra lateral */
-
         .sidebar-label {
             margin: 0 12px 14px;
             color: #777780;
@@ -132,8 +124,6 @@
             height: 17px;
             flex-shrink: 0;
         }
-
-        /* Contenido principal */
 
         .access-main {
             min-width: 0;
@@ -215,8 +205,6 @@
             line-height: 1.7;
         }
 
-        /* Panel */
-
         .access-panel {
             padding: 25px;
             background: var(--surface);
@@ -290,8 +278,6 @@
             color: #a59ab9;
             font-size: 20px;
         }
-
-        /* Inicio de sesión */
 
         .selected-profile {
             display: flex;
@@ -418,6 +404,8 @@
             }
         }
     </style>
+
+    <link rel="stylesheet" href="css/pulido.css">
 </head>
 
 <body>
@@ -456,7 +444,8 @@
 
         <header class="topbar">
             <div class="breadcrumb">
-                NautaTicket /
+                <span>NautaTicket</span>
+                <span class="breadcrumb-separator">/</span>
                 <strong>Acceso</strong>
             </div>
 
@@ -473,12 +462,8 @@
                 <section id="profilesView">
 
                     <div class="section-heading">
-                        <span class="eyebrow">
-                            Centro de acceso
-                        </span>
-
+                        <span class="eyebrow">Centro de acceso</span>
                         <h1>Bienvenido a NautaTicket</h1>
-
                         <p>
                             Selecciona tu perfil para continuar
                             al sistema.
@@ -487,9 +472,7 @@
 
                     <div class="access-panel">
 
-                        <h2 class="panel-title">
-                            Seleccionar perfil
-                        </h2>
+                        <h2 class="panel-title">Seleccionar perfil</h2>
 
                         <div class="profile-list">
 
@@ -502,9 +485,7 @@
 
                                 <span class="profile-info">
                                     <strong>Administrador</strong>
-                                    <small>
-                                        Administración y configuración
-                                    </small>
+                                    <small>Administración y configuración</small>
                                 </span>
 
                                 <span class="profile-arrow">›</span>
@@ -519,9 +500,7 @@
 
                                 <span class="profile-info">
                                     <strong>Soporte técnico</strong>
-                                    <small>
-                                        Atención y resolución de tickets
-                                    </small>
+                                    <small>Atención y resolución de tickets</small>
                                 </span>
 
                                 <span class="profile-arrow">›</span>
@@ -536,9 +515,7 @@
 
                                 <span class="profile-info">
                                     <strong>Empleado</strong>
-                                    <small>
-                                        Registro y seguimiento de solicitudes
-                                    </small>
+                                    <small>Registro y seguimiento de solicitudes</small>
                                 </span>
 
                                 <span class="profile-arrow">›</span>
@@ -546,18 +523,13 @@
 
                         </div>
                     </div>
-
                 </section>
 
                 <section id="loginView" hidden>
 
                     <div class="section-heading">
-                        <span class="eyebrow">
-                            Identificación
-                        </span>
-
+                        <span class="eyebrow">Identificación</span>
                         <h1>Iniciar sesión</h1>
-
                         <p>
                             Introduce tus credenciales
                             para acceder al sistema.

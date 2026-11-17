@@ -13,9 +13,12 @@ import netscape.javascript.JSObject;
 import ni.edu.uam.nautaticket.bridge.WebAdminBridge;
 import ni.edu.uam.nautaticket.bridge.WebAtencionBridge;
 import ni.edu.uam.nautaticket.bridge.WebDashboardBridge;
+import ni.edu.uam.nautaticket.bridge.WebEstadisticasBridge;
 import ni.edu.uam.nautaticket.bridge.WebHistorialBridge;
 import ni.edu.uam.nautaticket.bridge.WebLoginBridge;
+import ni.edu.uam.nautaticket.bridge.WebReporteBridge;
 import ni.edu.uam.nautaticket.bridge.WebTicketBridge;
+
 import ni.edu.uam.nautaticket.model.Usuario;
 import ni.edu.uam.nautaticket.util.HibernateUtil;
 
@@ -42,6 +45,8 @@ public class WebPreviewApp extends Application {
     private WebTicketBridge ticketBridge;
     private WebAtencionBridge atencionBridge;
     private WebHistorialBridge historialBridge;
+    private WebReporteBridge reporteBridge;
+    private WebEstadisticasBridge estadisticasBridge;
 
     private Usuario usuarioAutenticado;
     private String perfilAutenticado;
@@ -51,13 +56,11 @@ public class WebPreviewApp extends Application {
 
         this.stage = stage;
 
-        URL recursoLogin = getClass().getResource(
-                "/web/index.html"
-        );
+        URL recursoLogin =
+                getClass().getResource("/web/index.html");
 
-        URL recursoDashboard = getClass().getResource(
-                "/web/dashboard.html"
-        );
+        URL recursoDashboard =
+                getClass().getResource("/web/dashboard.html");
 
         if (recursoLogin == null || recursoDashboard == null) {
             throw new IllegalStateException(
@@ -98,21 +101,17 @@ public class WebPreviewApp extends Application {
         engine.locationProperty().addListener(
                 (observable, anterior, nueva) -> {
 
-                    if (nueva == null
-                            || nueva.isBlank()
-                            || "about:blank".equals(nueva)) {
+                    if (nueva == null ||
+                            nueva.isBlank() ||
+                            "about:blank".equals(nueva)) {
                         return;
                     }
 
-                    boolean login = esMismaPagina(
-                            paginaLogin,
-                            nueva
-                    );
+                    boolean login =
+                            esMismaPagina(paginaLogin, nueva);
 
-                    boolean dashboard = esMismaPagina(
-                            paginaDashboard,
-                            nueva
-                    );
+                    boolean dashboard =
+                            esMismaPagina(paginaDashboard, nueva);
 
                     if (!login && !dashboard) {
 
@@ -151,6 +150,7 @@ public class WebPreviewApp extends Application {
         String direccion = engine.getLocation();
 
         if (esMismaPagina(paginaLogin, direccion)) {
+
             limpiarSesion();
             registrarLogin(direccion);
             return;
@@ -213,7 +213,9 @@ public class WebPreviewApp extends Application {
         usuarioAutenticado = usuario;
         perfilAutenticado = perfil;
 
-        LOGGER.info("Usuario autenticado correctamente.");
+        LOGGER.info(
+                "Usuario autenticado correctamente."
+        );
 
         abrirDashboard();
     }
@@ -222,7 +224,6 @@ public class WebPreviewApp extends Application {
 
         try {
 
-            // Invalidar puentes anteriores.
             desactivarPuentes();
 
             JSObject ventana = (JSObject)
@@ -253,6 +254,19 @@ public class WebPreviewApp extends Application {
                         "nautaAdminBridge",
                         adminBridge
                 );
+
+                estadisticasBridge =
+                        new WebEstadisticasBridge(
+                                engine,
+                                stage,
+                                direccion,
+                                usuarioAutenticado
+                        );
+
+                ventana.setMember(
+                        "nautaEstadisticasBridge",
+                        estadisticasBridge
+                );
             }
 
             ticketBridge = new WebTicketBridge(
@@ -279,10 +293,6 @@ public class WebPreviewApp extends Application {
                         "nautaAtencionBridge",
                         atencionBridge
                 );
-
-                LOGGER.info(
-                        "Atención FIFO habilitada para técnico TI."
-                );
             }
 
             if (esAdministrador() || esTecnico()) {
@@ -298,10 +308,30 @@ public class WebPreviewApp extends Application {
                         historialBridge
                 );
 
-                LOGGER.info(
-                        "Consulta de historial habilitada."
+                reporteBridge = new WebReporteBridge(
+                        engine,
+                        stage,
+                        direccion,
+                        usuarioAutenticado
+                );
+
+                ventana.setMember(
+                        "nautaReporteBridge",
+                        reporteBridge
                 );
             }
+
+            // El backend permite reportes a los
+            // perfiles administrativo y técnico.
+            engine.executeScript(
+                    "document.querySelectorAll(" +
+                            "'[data-section=\"reportes\"], " +
+                            "#reportes').forEach(function(elemento) {" +
+                            "elemento.setAttribute(" +
+                            "'data-roles', " +
+                            "'Administrador,Soporte técnico');" +
+                            "});"
+            );
 
             engine.executeScript(
                     "if (typeof window.nautaDashboardReady " +
@@ -323,11 +353,29 @@ public class WebPreviewApp extends Application {
             }
 
             if (esAdministrador() || esTecnico()) {
+
                 cargarScript(
                         "/web/js/historial.js",
                         "js/historial.js"
                 );
+
+                cargarScript(
+                        "/web/js/reportes.js",
+                        "js/reportes.js"
+                );
             }
+
+            if (esAdministrador()) {
+
+                cargarScript(
+                        "/web/js/estadisticas.js",
+                        "js/estadisticas.js"
+                );
+            }
+
+            LOGGER.info(
+                    "Dashboard HTML registrado correctamente."
+            );
 
         } catch (Exception e) {
 
@@ -393,7 +441,10 @@ public class WebPreviewApp extends Application {
             return;
         }
 
-        stage.setTitle("NautaTicket - Panel principal");
+        stage.setTitle(
+                "NautaTicket - Panel principal"
+        );
+
         engine.load(paginaDashboard);
     }
 
@@ -422,10 +473,20 @@ public class WebPreviewApp extends Application {
             historialBridge.desactivar();
         }
 
+        if (reporteBridge != null) {
+            reporteBridge.desactivar();
+        }
+
+        if (estadisticasBridge != null) {
+            estadisticasBridge.desactivar();
+        }
+
         adminBridge = null;
         ticketBridge = null;
         atencionBridge = null;
         historialBridge = null;
+        reporteBridge = null;
+        estadisticasBridge = null;
     }
 
     private void limpiarSesion() {

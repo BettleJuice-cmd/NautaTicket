@@ -1,4 +1,3 @@
-
 package ni.edu.uam.nautaticket.controller;
 
 import javafx.beans.property.ReadOnlyStringWrapper;
