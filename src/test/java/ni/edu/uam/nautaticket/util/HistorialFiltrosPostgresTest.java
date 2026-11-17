@@ -1,6 +1,9 @@
 package ni.edu.uam.nautaticket.util;
 
 import ni.edu.uam.nautaticket.model.HistorialTicket;
+import ni.edu.uam.nautaticket.model.EstadoTicket;
+import ni.edu.uam.nautaticket.model.Ticket;
+import ni.edu.uam.nautaticket.dao.HistorialTicketDAO;
 import ni.edu.uam.nautaticket.service.HistorialService;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.AvailableSettings;
@@ -15,6 +18,7 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,6 +33,7 @@ class HistorialFiltrosPostgresTest {
     private String esquema;
     private int solicitanteA;
     private int solicitanteB;
+    private int administrador;
     private int ticketA;
     private int ticketB;
     private int ticketC;
@@ -57,6 +62,7 @@ class HistorialFiltrosPostgresTest {
 
         solicitanteA = usuario("a");
         solicitanteB = usuario("b");
+        administrador = usuario("admin", "ADMIN");
         ticketA = ticket(solicitanteA);
         ticketB = ticket(solicitanteB);
         ticketC = ticket(solicitanteA);
@@ -89,7 +95,7 @@ class HistorialFiltrosPostgresTest {
 
     @Test
     void filtrosIndividualesSinIdYOrdenEstable() {
-        var servicio = new HistorialService(sesiones);
+        var servicio = new HistorialService(sesiones, administrador);
         assertEquals(List.of(inicioC, resueltoB, cierreA, inicioB, procesoA, inicioA),
                 ids(servicio.buscar(null, null, null, null)));
         assertEquals(4, servicio.buscar(null, DIA, DIA, null).size());
@@ -101,7 +107,7 @@ class HistorialFiltrosPostgresTest {
 
     @Test
     void combinaFiltrosEIncluyeAmbosLimitesDelDia() {
-        var servicio = new HistorialService(sesiones);
+        var servicio = new HistorialService(sesiones, administrador);
         assertEquals(List.of(cierreA), ids(servicio.buscar(ticketA, DIA, DIA, "CERRADO")));
         assertEquals(List.of(inicioA), ids(servicio.buscar(ticketA, DIA, DIA, "PENDIENTE")));
         assertEquals(List.of(inicioB, inicioA), ids(servicio.buscar(null, DIA, DIA, "PENDIENTE")));
@@ -110,23 +116,51 @@ class HistorialFiltrosPostgresTest {
     }
 
     @Test
-    void empleadoSoloVeSusTicketsConYCualquierFiltro() {
+    void empleadoNoPuedeConsultarHistorialNiPorRutaDirecta() {
         var empleado = new HistorialService(sesiones, solicitanteA);
-        assertEquals(4, empleado.buscar(null, null, null, null).size());
-        assertEquals(3, empleado.buscar(null, DIA, DIA, null).size());
-        assertEquals(List.of(inicioA), ids(empleado.buscar(null, DIA, DIA, "PENDIENTE")));
-        assertTrue(empleado.buscar(ticketB, null, null, null).isEmpty());
-        assertTrue(empleado.buscar(ticketB, DIA, DIA, "PENDIENTE").isEmpty());
-        assertEquals(3, empleado.historialPorTicket(ticketA, null, null, null).size());
+        assertThrows(SecurityException.class, () -> empleado.buscar(null, null, null, null));
+        assertThrows(SecurityException.class, () -> empleado.historialPorTicket(ticketA, null, null, null));
+        assertThrows(SecurityException.class, () -> empleado.totales(null, null, null));
+        assertThrows(SecurityException.class, () -> new HistorialService(sesiones).buscar(null, null, null, null));
     }
 
     @Test
     void rechazaIdNoPositivoRangoInvertidoYEstadoDesconocido() {
-        var servicio = new HistorialService(sesiones);
+        var servicio = new HistorialService(sesiones, administrador);
         assertThrows(IllegalArgumentException.class, () -> servicio.buscar(0, null, null, null));
         assertThrows(IllegalArgumentException.class, () -> servicio.buscar(-1, null, null, null));
         assertThrows(IllegalArgumentException.class, () -> servicio.buscar(null, DIA.plusDays(1), DIA, null));
         assertThrows(IllegalArgumentException.class, () -> servicio.buscar(null, null, null, "DESCONOCIDO"));
+    }
+
+    @Test
+    void agregaEstadosActualesConHqlYRespetaFiltros() {
+        sesiones.inTransaction(session -> {
+            Ticket primero = session.get(Ticket.class, ticketA);
+            Ticket segundo = session.get(Ticket.class, ticketB);
+            Ticket tercero = session.get(Ticket.class, ticketC);
+            EstadoTicket resuelto = session.createSelectionQuery(
+                    "FROM EstadoTicket e WHERE e.nombre = :nombre", EstadoTicket.class)
+                    .setParameter("nombre", "RESUELTO").getSingleResult();
+            EstadoTicket proceso = session.createSelectionQuery(
+                    "FROM EstadoTicket e WHERE e.nombre = :nombre", EstadoTicket.class)
+                    .setParameter("nombre", "EN_PROCESO").getSingleResult();
+            primero.setFechaCreacion(DIA.atStartOfDay());
+            segundo.setFechaCreacion(DIA.plusDays(1).atStartOfDay());
+            segundo.setEstado(resuelto);
+            tercero.setFechaCreacion(DIA.plusDays(1).atTime(12, 0));
+            tercero.setEstado(proceso);
+        });
+
+        var servicio = new HistorialService(sesiones, administrador);
+        assertEquals(Map.of("PENDIENTE", 1L, "RESUELTO", 1L,
+                "EN_PROCESO", 1L), servicio.totales(null, null, null));
+        assertEquals(Map.of("PENDIENTE", 1L), servicio.totales(DIA, DIA, null));
+        assertEquals(Map.of("RESUELTO", 1L),
+                servicio.totales(DIA.plusDays(1), DIA.plusDays(1), "RESUELTO"));
+        assertEquals(Map.of("PENDIENTE", 1L, "EN_PROCESO", 1L),
+                new HistorialTicketDAO(sesiones, solicitanteA)
+                        .contarPorEstado(null, null, null));
     }
 
     private static List<Integer> ids(List<HistorialTicket> movimientos) {
@@ -134,12 +168,16 @@ class HistorialFiltrosPostgresTest {
     }
 
     private int usuario(String nombre) throws SQLException {
+        return usuario(nombre, "EMPLEADO");
+    }
+
+    private int usuario(String nombre, String rol) throws SQLException {
         return entero("""
                 INSERT INTO usuarios (nombre, apellido, correo, password_hash, id_rol)
                 VALUES ('%s', 'Prueba', '%s@nauta.invalid', 'fixture',
-                        (SELECT id_rol FROM roles WHERE nombre = 'EMPLEADO'))
+                        (SELECT id_rol FROM roles WHERE nombre = '%s'))
                 RETURNING id_usuario
-                """.formatted(nombre, nombre));
+                """.formatted(nombre, nombre, rol));
     }
 
     private int ticket(int solicitante) throws SQLException {

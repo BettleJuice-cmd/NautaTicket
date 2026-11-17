@@ -2,13 +2,28 @@ package ni.edu.uam.nautaticket.service;
 
 import ni.edu.uam.nautaticket.dao.UsuarioDao;
 import ni.edu.uam.nautaticket.model.Usuario;
+import org.hibernate.SessionFactory;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.Locale;
 
 public class AuthService {
 
-    private final UsuarioDao usuarioDao = new UsuarioDao();
+    private final UsuarioDao usuarioDao;
+
+    public AuthService() { this(new UsuarioDao()); }
+
+    public AuthService(SessionFactory sesiones) { this(new UsuarioDao(sesiones)); }
+
+    private AuthService(UsuarioDao usuarioDao) { this.usuarioDao = usuarioDao; }
+
+    public record AccesoAutenticado(Usuario usuario, SesionAutenticada sesion) {}
+
+    public AccesoAutenticado iniciarSesionConContexto(String correo, String password) {
+        Usuario usuario = iniciarSesion(correo, password);
+        return usuario == null ? null : new AccesoAutenticado(
+                usuario, new SesionAutenticada(usuario.getId()));
+    }
 
     public Usuario iniciarSesion(String correo, String password) {
 

@@ -6,16 +6,24 @@ import ni.edu.uam.nautaticket.dao.ReporteDAO;
 import ni.edu.uam.nautaticket.dto.ReporteTicketDTO;
 import ni.edu.uam.nautaticket.model.AsignacionTicket;
 import ni.edu.uam.nautaticket.service.AtencionService;
+import ni.edu.uam.nautaticket.service.AuthService;
 import ni.edu.uam.nautaticket.service.HistorialService;
 import ni.edu.uam.nautaticket.service.ReporteService;
+import ni.edu.uam.nautaticket.service.TicketService;
+import ni.edu.uam.nautaticket.model.Categoria;
+import ni.edu.uam.nautaticket.model.EstadoTicket;
+import ni.edu.uam.nautaticket.model.Ticket;
+import ni.edu.uam.nautaticket.model.Usuario;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.cfg.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import org.postgresql.ds.PGSimpleDataSource;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,10 +32,12 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -35,6 +45,10 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 @Timeout(30)
 class AtencionPostgresTest {
     private static final String MIGRACION = "05_asignacion_activa_unica.sql";
+    private static final Set<String> ENTIDADES = Set.of("Departamento", "Rol", "Usuario",
+            "EstadoTicket", "Categoria", "Ticket", "AsignacionTicket", "HistorialTicket");
+    private static final Set<String> TABLAS = Set.of("departamentos", "roles", "usuarios",
+            "estados_ticket", "categorias", "tickets", "asignaciones_ticket", "historial_tickets");
     private static final String TEMPRANO = "2026-01-01 10:00:00";
     private static final String TARDE = "2026-01-01 11:00:00";
 
@@ -85,6 +99,210 @@ class AtencionPostgresTest {
     @Test
     void dosTecnicosEsperanYRespetanFechaEId() throws Exception {
         verificarTomaConcurrente(false);
+    }
+
+    @Test
+    void xmlRegistraExactamenteOchoEntidadesYValidaEsquemaExistente() {
+        var configuracion = new Configuration().configure("hibernate.cfg.xml")
+                .setProperty("hibernate.default_schema", esquema)
+                .setProperty("hibernate.show_sql", "false");
+        configuracion.getProperties().put(AvailableSettings.JAKARTA_NON_JTA_DATASOURCE, datos);
+        try (SessionFactory fabrica = configuracion.buildSessionFactory()) {
+            assertEquals(ENTIDADES, fabrica.getMetamodel().getEntities().stream()
+                    .map(entidad -> entidad.getJavaType().getSimpleName())
+                    .collect(Collectors.toSet()));
+        }
+    }
+
+    @Test
+    void generaYValidaTablasSoloEnEsquemaTemporal() throws Exception {
+        aplicar(MIGRACION);
+        String generado = "generado_" + UUID.randomUUID().toString().replace("-", "");
+        try (var conexion = base.getConnection(); var sentencia = conexion.createStatement()) {
+            sentencia.execute("CREATE SCHEMA " + generado);
+        }
+        try {
+            PGSimpleDataSource fuenteGenerada = dataSource(System.getenv("NAUTATICKET_TEST_DB_URL"));
+            fuenteGenerada.setCurrentSchema(generado);
+            var configuracion = new Configuration().configure("hibernate.cfg.xml")
+                    .setProperty("hibernate.default_schema", generado)
+                    .setProperty("hibernate.hbm2ddl.auto", "create")
+                    .setProperty("hibernate.show_sql", "false");
+            configuracion.getProperties().put(AvailableSettings.JAKARTA_NON_JTA_DATASOURCE, fuenteGenerada);
+            try (SessionFactory fabrica = configuracion.buildSessionFactory()) {
+                assertEquals(ENTIDADES, fabrica.getMetamodel().getEntities().stream()
+                        .map(entidad -> entidad.getJavaType().getSimpleName())
+                        .collect(Collectors.toSet()));
+            }
+            assertEquals(TABLAS, tablas(generado));
+            assertEquals(TABLAS, tablas(esquema));
+
+            var validacion = new Configuration().configure("hibernate.cfg.xml")
+                    .setProperty("hibernate.default_schema", generado)
+                    .setProperty("hibernate.show_sql", "false");
+            validacion.getProperties().put(AvailableSettings.JAKARTA_NON_JTA_DATASOURCE, fuenteGenerada);
+            try (SessionFactory ignorada = validacion.buildSessionFactory()) {
+                // El XML mantiene validate; la fábrica recién creada valida las tablas generadas.
+            }
+
+            Set<String> indicesGenerados = indices(generado);
+            Set<String> indicesFaltantes = indices(esquema).stream()
+                    .filter(indice -> !indicesGenerados.contains(indice))
+                    .collect(Collectors.toSet());
+            System.out.println("Índices del esquema SQL ausentes en la generación Hibernate: "
+                    + indicesFaltantes);
+            Set<String> columnasGeneradas = columnas(generado);
+            Set<String> columnasFaltantes = columnas(esquema).stream()
+                    .filter(columna -> !columnasGeneradas.contains(columna))
+                    .collect(Collectors.toSet());
+            System.out.println("Columnas del esquema SQL ausentes en la generación Hibernate: "
+                    + columnasFaltantes);
+            Set<String> checksGenerados = restriccionesCheck(generado);
+            System.out.println("Restricciones CHECK del esquema SQL ausentes en la generación Hibernate: "
+                    + restriccionesCheck(esquema).stream()
+                    .filter(restriccion -> !checksGenerados.contains(restriccion))
+                    .collect(Collectors.toSet()));
+            Set<String> defaultsGenerados = columnasConDefault(generado);
+            System.out.println("Valores DEFAULT del esquema SQL ausentes en la generación Hibernate: "
+                    + columnasConDefault(esquema).stream()
+                    .filter(columna -> !defaultsGenerados.contains(columna))
+                    .collect(Collectors.toSet()));
+        } finally {
+            try (var conexion = base.getConnection(); var sentencia = conexion.createStatement()) {
+                sentencia.execute("DROP SCHEMA " + generado + " CASCADE");
+            }
+        }
+    }
+
+    @Test
+    void conservaTicketYAsignacionTrasReconstruirSessionFactory() throws Exception {
+        aplicar(MIGRACION);
+        iniciarHibernate();
+        int[] identificadores = sesiones.fromTransaction(session -> {
+            Categoria categoria = session.createSelectionQuery("FROM Categoria", Categoria.class)
+                    .setMaxResults(1).getSingleResult();
+            EstadoTicket pendiente = session.createSelectionQuery(
+                    "FROM EstadoTicket e WHERE e.nombre = :nombre", EstadoTicket.class)
+                    .setParameter("nombre", "PENDIENTE").getSingleResult();
+            Ticket ticket = new Ticket();
+            ticket.setSolicitante(session.getReference(Usuario.class, solicitante));
+            ticket.setCategoria(categoria);
+            ticket.setEstado(pendiente);
+            ticket.setTitulo("Persistencia tras reinicio");
+            ticket.setDescripcion("Prueba con PostgreSQL temporal");
+            session.persist(ticket);
+            AsignacionTicket asignacion = new AsignacionTicket(
+                    ticket, session.getReference(Usuario.class, tecnicoA));
+            ticket.agregarAsignacion(asignacion);
+            session.persist(asignacion);
+            session.flush();
+            return new int[] {ticket.getIdTicket(), asignacion.getIdAsignacion()};
+        });
+
+        SessionFactory primera = sesiones;
+        primera.close();
+        iniciarHibernate();
+        assertNotSame(primera, sesiones);
+        assertTrue(primera.isClosed());
+        sesiones.fromSession(session -> {
+            Ticket ticket = session.get(Ticket.class, identificadores[0]);
+            assertNotNull(ticket);
+            assertEquals("Persistencia tras reinicio", ticket.getTitulo());
+            assertEquals(1, ticket.getAsignaciones().size());
+            AsignacionTicket asignacion = ticket.getAsignaciones().getFirst();
+            assertEquals(identificadores[1], asignacion.getIdAsignacion());
+            assertEquals(ticket.getIdTicket(), asignacion.getTicket().getIdTicket());
+            assertEquals(tecnicoA, asignacion.getTecnico().getId());
+            return null;
+        });
+    }
+
+    @Test
+    void crudTicketDaoPersisteTrasReconstruirSessionFactory() throws Exception {
+        aplicar(MIGRACION);
+        iniciarHibernate();
+        Categoria categoria = sesiones.fromSession(session -> session.createSelectionQuery(
+                "FROM Categoria", Categoria.class).setMaxResults(1).getSingleResult());
+        TicketDAO dao = new TicketDAO(sesiones, solicitante);
+
+        Ticket ticket = new Ticket();
+        ticket.setCategoria(categoria);
+        ticket.setTitulo("CRUD temporal");
+        ticket.setDescripcion("Creación en PostgreSQL temporal");
+        dao.guardar(ticket, solicitante);
+        Integer id = ticket.getIdTicket();
+        assertNotNull(id);
+        assertEquals("CRUD temporal", dao.buscarPorId(id).getTitulo());
+
+        assertTrue(dao.actualizarDatos(id, "CRUD actualizado", "Actualización temporal",
+                categoria.getIdCategoria()));
+        assertEquals("CRUD actualizado", dao.buscarPorId(id).getTitulo());
+
+        SessionFactory primera = sesiones;
+        primera.close();
+        iniciarHibernate();
+        assertNotSame(primera, sesiones);
+        dao = new TicketDAO(sesiones, solicitante);
+        assertEquals("CRUD actualizado", dao.buscarPorId(id).getTitulo());
+
+        assertTrue(dao.eliminar(id));
+        assertNull(dao.buscarPorId(id));
+    }
+
+    @Test
+    void serviciosAplicanPermisosDeCreacionHistorialYAtencion() throws Exception {
+        aplicar(MIGRACION);
+        int administrador = usuario("administrador", "ADMIN");
+        var atencion = iniciarHibernate();
+        assertNull(new AuthService(sesiones).iniciarSesionConContexto(
+                "a@nauta.invalid", "Incorrecta"));
+        var sinSesion = new AtencionService(sesiones);
+        assertThrows(SecurityException.class, sinSesion::listarPendientes);
+        assertThrows(SecurityException.class, () -> sinSesion.tomarSiguienteTicket(tecnicoA));
+        assertThrows(SecurityException.class, () -> atencion.listarMisTickets(tecnicoB));
+        assertThrows(SecurityException.class, () -> atencion.contarTicketsActivos(tecnicoB));
+        assertThrows(SecurityException.class, () -> atencion.tomarSiguienteTicket(tecnicoB));
+        assertThrows(SecurityException.class, () -> atencion.iniciarAtencion(1, tecnicoB));
+        assertThrows(SecurityException.class, () -> atencion.resolverTicket(1, tecnicoB, "Prueba"));
+        assertThrows(SecurityException.class, atencionPara("solicitante")::listarPendientes);
+        assertThrows(SecurityException.class, atencionPara("administrador")::listarPendientes);
+        var accesoCerrado = new AuthService(sesiones).iniciarSesionConContexto(
+                "a@nauta.invalid", "Prueba123!");
+        assertNotNull(accesoCerrado);
+        var atencionCerrada = new AtencionService(sesiones, accesoCerrado.sesion());
+        accesoCerrado.sesion().cerrar();
+        assertThrows(SecurityException.class, atencionCerrada::listarPendientes);
+        Categoria categoria = sesiones.fromSession(session -> session.createSelectionQuery(
+                "FROM Categoria", Categoria.class).setMaxResults(1).getSingleResult());
+        var empleadoTickets = new TicketService(sesiones, solicitante);
+        var adminTickets = new TicketService(sesiones, administrador);
+        var tecnicoTickets = new TicketService(sesiones, tecnicoA);
+
+        empleadoTickets.crearTicket("Solicitud empleado", "Detalle", categoria, solicitante);
+        adminTickets.crearTicket("Solicitud admin", "Detalle", categoria, administrador);
+        assertEquals(2, atencion.listarPendientes().size());
+        assertEquals(2, adminTickets.listarTickets().size());
+        assertThrows(SecurityException.class, empleadoTickets::listarTickets);
+        assertThrows(SecurityException.class, () -> empleadoTickets.buscarTicket(1));
+        assertThrows(SecurityException.class, () -> tecnicoTickets.crearTicket(
+                "Prohibido", "Detalle", categoria, tecnicoA));
+        assertThrows(SecurityException.class, () -> empleadoTickets.crearTicket(
+                "Suplantación", "Detalle", categoria, administrador));
+        assertThrows(SecurityException.class, () -> new HistorialService(sesiones, solicitante)
+                .buscar(null, null, null, null));
+
+        int primero = atencion.listarPendientes().getFirst().idTicket();
+        var atencionAdmin = atencionPara("administrador");
+        assertThrows(SecurityException.class, () -> atencionAdmin.tomarSiguienteTicket(administrador));
+        assertThrows(SecurityException.class, () -> atencionAdmin.iniciarAtencion(primero, administrador));
+        assertThrows(SecurityException.class, () -> atencionAdmin.resolverTicket(
+                primero, administrador, "Prohibido"));
+        assertThrows(SecurityException.class, () -> atencion.tomarSiguienteTicket(administrador));
+        assertThrows(SecurityException.class, () -> atencion.iniciarAtencion(primero, administrador));
+        assertThrows(SecurityException.class, () -> atencion.resolverTicket(
+                primero, administrador, "Prohibido"));
+        assertEquals(primero, atencion.tomarSiguienteTicket(tecnicoA));
+        assertEquals(1, atencion.contarTicketsActivos(tecnicoA));
     }
 
     @Test
@@ -175,9 +393,11 @@ class AtencionPostgresTest {
         int ticket = ticket("PENDIENTE", TEMPRANO);
         asignacion(ticket, tecnicoB, "TIMESTAMP '" + TARDE + "'");
         var atencion = iniciarHibernate();
-        assertThrows(IllegalArgumentException.class, () -> atencion.tomarSiguienteTicket(solicitante));
+        assertThrows(SecurityException.class, () -> atencion.tomarSiguienteTicket(solicitante));
         assertEquals(ticket, atencion.tomarSiguienteTicket(tecnicoA));
-        assertThrows(IllegalStateException.class, () -> atencion.iniciarAtencion(ticket, tecnicoB));
+        assertThrows(SecurityException.class, () -> atencion.iniciarAtencion(ticket, tecnicoB));
+        assertThrows(SecurityException.class, () -> atencion.resolverTicket(
+                ticket, tecnicoB, "No es mi ticket"));
         atencion.iniciarAtencion(ticket, tecnicoA);
         assertThrows(IllegalStateException.class, () -> atencion.iniciarAtencion(ticket, tecnicoA));
         assertThrows(IllegalArgumentException.class, () -> atencion.resolverTicket(ticket, tecnicoA, " "));
@@ -200,7 +420,7 @@ class AtencionPostgresTest {
         assertEquals(LocalDateTime.parse("2026-01-01T11:00:00"), asignaciones.getFirst().getFechaFin());
         assertNotNull(asignaciones.getLast().getFechaFin());
 
-        var historial = new HistorialService(sesiones);
+        var historial = new HistorialService(sesiones, tecnicoA);
         var eventos = historial.historialPorTicket(ticket, null, null, null);
         assertEquals(3, eventos.size());
         assertEquals("RESUELTO", eventos.getFirst().getEstadoNuevo());
@@ -311,7 +531,7 @@ class AtencionPostgresTest {
         ejecutar("INSERT INTO roles (nombre) VALUES ('INVITADO')");
         int desconocido = usuario("invitadoReporte", "INVITADO");
         ejecutar("UPDATE usuarios SET activo = FALSE WHERE id_usuario = " + tecnicoA);
-        iniciarHibernate();
+        iniciarHibernateSolo();
         var dao = new ReporteDAO(sesiones);
 
         assertThrows(SecurityException.class, () -> dao.obtenerTickets(null, null, null, solicitante));
@@ -361,6 +581,7 @@ class AtencionPostgresTest {
         int primero = ticket("PENDIENTE", TEMPRANO);
         int segundo = ticket("PENDIENTE", TEMPRANO);
         var atencion = iniciarHibernate();
+        var atencionB = atencionPara("b");
         ejecutar("CREATE TABLE bloqueo_prueba (id INTEGER PRIMARY KEY); INSERT INTO bloqueo_prueba VALUES (1);");
         ejecutar("""
                 CREATE FUNCTION bloquear_historial() RETURNS trigger LANGUAGE plpgsql AS $$
@@ -387,7 +608,7 @@ class AtencionPostgresTest {
             }
             var tomaA = hilos.submit(() -> atencion.tomarSiguienteTicket(tecnicoA));
             int pidA = esperarBloqueadoPor(pidControl);
-            var tomaB = hilos.submit(() -> atencion.tomarSiguienteTicket(tecnicoB));
+            var tomaB = hilos.submit(() -> atencionB.tomarSiguienteTicket(tecnicoB));
             esperarBloqueadoPor(pidA);
             assertEquals(0, entero("SELECT COUNT(*) FROM asignaciones_ticket"));
             control.commit();
@@ -425,20 +646,31 @@ class AtencionPostgresTest {
     }
 
     private AtencionService iniciarHibernate() {
+        iniciarHibernateSolo();
+        return atencionPara("a");
+    }
+
+    private void iniciarHibernateSolo() {
         var configuracion = HibernateUtil.configuracionBase()
                 .setProperty("hibernate.default_schema", esquema)
                 .setProperty("hibernate.show_sql", "false");
         configuracion.getProperties().put(AvailableSettings.JAKARTA_NON_JTA_DATASOURCE, datos);
         sesiones = configuracion.buildSessionFactory();
-        return new AtencionService(sesiones);
+    }
+
+    private AtencionService atencionPara(String correo) {
+        var acceso = new AuthService(sesiones).iniciarSesionConContexto(
+                correo + "@nauta.invalid", "Prueba123!");
+        assertNotNull(acceso);
+        return new AtencionService(sesiones, acceso.sesion());
     }
 
     private int usuario(String nombre, String rol) throws SQLException {
         return entero("""
                 INSERT INTO usuarios (nombre, apellido, correo, password_hash, id_rol)
-                VALUES ('%s', 'Prueba', '%s@nauta.invalid', 'fixture', (SELECT id_rol FROM roles WHERE nombre = '%s'))
+                VALUES ('%s', 'Prueba', '%s@nauta.invalid', '%s', (SELECT id_rol FROM roles WHERE nombre = '%s'))
                 RETURNING id_usuario
-                """.formatted(nombre, nombre, rol));
+                """.formatted(nombre, nombre, BCrypt.hashpw("Prueba123!", BCrypt.gensalt(4)), rol));
     }
 
     private int ticket(String estado, String fecha) throws SQLException {
@@ -481,5 +713,70 @@ class AtencionPostgresTest {
             assertTrue(resultado.next());
             return resultado.getInt(1);
         }
+    }
+
+    private Set<String> tablas(String nombreEsquema) throws SQLException {
+        Set<String> nombres = new java.util.HashSet<>();
+        try (var conexion = base.getConnection(); var consulta = conexion.prepareStatement(
+                "SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'")) {
+            consulta.setString(1, nombreEsquema);
+            try (var resultado = consulta.executeQuery()) {
+                while (resultado.next()) nombres.add(resultado.getString(1));
+            }
+        }
+        return nombres;
+    }
+
+    private Set<String> indices(String nombreEsquema) throws SQLException {
+        Set<String> nombres = new java.util.HashSet<>();
+        try (var conexion = base.getConnection(); var consulta = conexion.prepareStatement(
+                "SELECT indexname FROM pg_indexes WHERE schemaname = ?")) {
+            consulta.setString(1, nombreEsquema);
+            try (var resultado = consulta.executeQuery()) {
+                while (resultado.next()) nombres.add(resultado.getString(1));
+            }
+        }
+        return nombres;
+    }
+
+    private Set<String> columnas(String nombreEsquema) throws SQLException {
+        Set<String> nombres = new java.util.HashSet<>();
+        try (var conexion = base.getConnection(); var consulta = conexion.prepareStatement(
+                "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = ?")) {
+            consulta.setString(1, nombreEsquema);
+            try (var resultado = consulta.executeQuery()) {
+                while (resultado.next()) nombres.add(resultado.getString(1) + "." + resultado.getString(2));
+            }
+        }
+        return nombres;
+    }
+
+    private Set<String> restriccionesCheck(String nombreEsquema) throws SQLException {
+        Set<String> nombres = new java.util.HashSet<>();
+        try (var conexion = base.getConnection(); var consulta = conexion.prepareStatement("""
+                SELECT c.conname FROM pg_constraint c
+                JOIN pg_namespace n ON n.oid = c.connamespace
+                WHERE n.nspname = ? AND c.contype = 'c'
+                """)) {
+            consulta.setString(1, nombreEsquema);
+            try (var resultado = consulta.executeQuery()) {
+                while (resultado.next()) nombres.add(resultado.getString(1));
+            }
+        }
+        return nombres;
+    }
+
+    private Set<String> columnasConDefault(String nombreEsquema) throws SQLException {
+        Set<String> nombres = new java.util.HashSet<>();
+        try (var conexion = base.getConnection(); var consulta = conexion.prepareStatement("""
+                SELECT table_name, column_name FROM information_schema.columns
+                WHERE table_schema = ? AND column_default IS NOT NULL
+                """)) {
+            consulta.setString(1, nombreEsquema);
+            try (var resultado = consulta.executeQuery()) {
+                while (resultado.next()) nombres.add(resultado.getString(1) + "." + resultado.getString(2));
+            }
+        }
+        return nombres;
     }
 }

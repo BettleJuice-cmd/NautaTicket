@@ -4,12 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.concurrent.Task;
 import javafx.scene.web.WebEngine;
 import ni.edu.uam.nautaticket.dao.CategoriaDAO;
-import ni.edu.uam.nautaticket.dao.TicketDAO;
-import ni.edu.uam.nautaticket.dao.UsuarioDao;
 import ni.edu.uam.nautaticket.model.Categoria;
 import ni.edu.uam.nautaticket.model.Ticket;
 import ni.edu.uam.nautaticket.model.Usuario;
 import ni.edu.uam.nautaticket.service.TicketService;
+import ni.edu.uam.nautaticket.service.AutorizacionService;
 import org.hibernate.SessionFactory;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -80,6 +79,8 @@ public class WebTicketBridge {
             @Override
             protected Map<String, Object> call() {
                 verificarActivo();
+                new AutorizacionService(sessionFactory, usuarioId)
+                        .exigirRol("ADMIN", "EMPLEADO");
                 Usuario actual = obtenerUsuarioActual();
 
                 TicketService servicio = crearServicio(actual);
@@ -104,7 +105,9 @@ public class WebTicketBridge {
                     categorias.add(fila);
                 }
 
-                for (Ticket ticket : servicio.listarTickets()) {
+                List<Ticket> visibles = "ADMIN".equals(actual.getRol().getNombre())
+                        ? servicio.listarTickets() : List.of();
+                for (Ticket ticket : visibles) {
 
                     Map<String, Object> fila =
                             new LinkedHashMap<>();
@@ -222,6 +225,8 @@ public class WebTicketBridge {
             protected String call() throws Exception {
 
                 verificarActivo();
+                new AutorizacionService(sessionFactory, usuarioId)
+                        .exigirRol("ADMIN", "EMPLEADO");
 
                 Usuario actual = obtenerUsuarioActual();
 
@@ -371,8 +376,13 @@ public class WebTicketBridge {
 
     private Usuario obtenerUsuarioActual() {
 
-        Usuario actual = new UsuarioDao()
-                .buscarPorId(usuarioId);
+        Usuario actual = sessionFactory.fromSession(session ->
+                session.createSelectionQuery("""
+                        SELECT u FROM Usuario u JOIN FETCH u.rol
+                        WHERE u.id = :id AND u.activo = true
+                        """, Usuario.class)
+                        .setParameter("id", usuarioId)
+                        .uniqueResult());
 
         if (actual == null || !actual.isActivo()) {
             throw new SecurityException(
@@ -385,24 +395,7 @@ public class WebTicketBridge {
 
     private TicketService crearServicio(Usuario actual) {
 
-        boolean administrador =
-                actual.getRol() != null &&
-                        "ADMIN".equalsIgnoreCase(
-                                actual.getRol().getNombre()
-                        );
-
-        // La cuenta normal solo accede a sus tickets.
-        // El administrador utiliza el alcance global
-        // que ya contempla TicketDAO.
-        Integer filtroSolicitante =
-                administrador ? null : usuarioId;
-
-        TicketDAO dao = new TicketDAO(
-                sessionFactory,
-                filtroSolicitante
-        );
-
-        return new TicketService(dao);
+        return new TicketService(sessionFactory, usuarioId);
     }
 
     private String texto(JsonNode datos, String campo) {

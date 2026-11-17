@@ -4,15 +4,25 @@ package ni.edu.uam.nautaticket.service;
 import ni.edu.uam.nautaticket.dao.TicketDAO;
 import ni.edu.uam.nautaticket.model.Categoria;
 import ni.edu.uam.nautaticket.model.Ticket;
+import org.hibernate.SessionFactory;
 
 import java.util.List;
 
 public class TicketService {
 
-    private final TicketDAO ticketDAO;
+    private final SessionFactory sesiones;
+    private final int usuarioId;
+    private final AutorizacionService autorizacion;
 
-    public TicketService(TicketDAO ticketDAO) {
-        this.ticketDAO = ticketDAO;
+    public TicketService(SessionFactory sesiones, Integer usuarioId) {
+        this.autorizacion = new AutorizacionService(sesiones, usuarioId);
+        this.sesiones = sesiones;
+        this.usuarioId = usuarioId;
+    }
+
+    private TicketDAO daoAdministrador() {
+        autorizacion.exigirRol("ADMIN");
+        return new TicketDAO(sesiones);
     }
 
     public void crearTicket(String titulo, String descripcion,
@@ -20,19 +30,21 @@ public class TicketService {
 
         validarDatos(titulo, descripcion, categoria);
 
-        if (idSolicitante == null || idSolicitante <= 0) {
-            throw new IllegalArgumentException("El solicitante es obligatorio.");
+        autorizacion.exigirRol("EMPLEADO", "ADMIN");
+
+        if (!Integer.valueOf(usuarioId).equals(idSolicitante)) {
+            throw new SecurityException("El solicitante debe ser el usuario autenticado.");
         }
 
         Ticket ticket = new Ticket();
         ticket.setTitulo(titulo.trim());
         ticket.setDescripcion(descripcion.trim());
         ticket.setCategoria(categoria);
-        ticketDAO.guardar(ticket, idSolicitante);
+        new TicketDAO(sesiones, usuarioId).guardar(ticket, usuarioId);
     }
 
     public List<Ticket> listarTickets() {
-        return ticketDAO.listar();
+        return daoAdministrador().listar();
     }
 
     public Ticket buscarTicket(Integer id) {
@@ -40,7 +52,7 @@ public class TicketService {
             throw new IllegalArgumentException("ID de ticket inválido.");
         }
 
-        return ticketDAO.buscarPorId(id);
+        return daoAdministrador().buscarPorId(id);
     }
 
     public List<Ticket> buscarPorCategoria(Integer idCategoria) {
@@ -48,7 +60,7 @@ public class TicketService {
             throw new IllegalArgumentException("Seleccione una categoría válida.");
         }
 
-        return ticketDAO.buscarPorCategoria(idCategoria);
+        return daoAdministrador().buscarPorCategoria(idCategoria);
     }
 
     public boolean actualizarTicket(Integer id, String titulo,
@@ -60,7 +72,7 @@ public class TicketService {
 
         validarDatos(titulo, descripcion, categoria);
 
-        return ticketDAO.actualizarDatos(
+        return daoAdministrador().actualizarDatos(
                 id,
                 titulo.trim(),
                 descripcion.trim(),
@@ -73,7 +85,7 @@ public class TicketService {
             throw new IllegalArgumentException("ID de ticket inválido.");
         }
 
-        return ticketDAO.eliminar(id);
+        return daoAdministrador().eliminar(id);
     }
 
     private void validarDatos(String titulo, String descripcion,

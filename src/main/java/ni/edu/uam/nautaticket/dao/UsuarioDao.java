@@ -3,14 +3,26 @@ package ni.edu.uam.nautaticket.dao;
 import ni.edu.uam.nautaticket.model.Usuario;
 import ni.edu.uam.nautaticket.util.HibernateUtil;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 
 import java.util.List;
 
 public class UsuarioDao {
+    private final SessionFactory sesiones;
+
+    public UsuarioDao() { this.sesiones = null; }
+
+    public UsuarioDao(SessionFactory sesiones) {
+        this.sesiones = java.util.Objects.requireNonNull(sesiones);
+    }
+
+    private SessionFactory sesiones() {
+        return sesiones == null ? HibernateUtil.getSessionFactory() : sesiones;
+    }
 
     public void guardar(Usuario usuario) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = sesiones().openSession()) {
             Transaction tx = session.beginTransaction();
 
             try {
@@ -24,7 +36,7 @@ public class UsuarioDao {
     }
 
     public List<Usuario> listar() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = sesiones().openSession()) {
             return session.createQuery(
                     "SELECT u FROM Usuario u " +
                             "JOIN FETCH u.rol " +
@@ -36,7 +48,7 @@ public class UsuarioDao {
     }
 
     public Usuario buscarPorId(Integer id) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = sesiones().openSession()) {
             return session.createQuery(
                             "SELECT u FROM Usuario u " +
                                     "JOIN FETCH u.rol " +
@@ -49,7 +61,7 @@ public class UsuarioDao {
     }
 
     public Usuario buscarPorCorreo(String correo) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = sesiones().openSession()) {
             return session.createQuery(
                             "SELECT u FROM Usuario u " +
                                     "JOIN FETCH u.rol " +
@@ -62,7 +74,7 @@ public class UsuarioDao {
     }
 
     public void actualizar(Usuario usuario) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = sesiones().openSession()) {
             Transaction tx = session.beginTransaction();
 
             try {
@@ -76,7 +88,7 @@ public class UsuarioDao {
     }
 
     public void desactivar(Integer id) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = sesiones().openSession()) {
             Transaction tx = session.beginTransaction();
 
             try {

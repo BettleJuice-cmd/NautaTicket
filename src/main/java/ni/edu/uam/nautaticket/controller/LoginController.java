@@ -11,6 +11,7 @@ import javafx.stage.Stage;
 import ni.edu.uam.nautaticket.NautaTicketApp;
 import ni.edu.uam.nautaticket.model.Usuario;
 import ni.edu.uam.nautaticket.service.AuthService;
+import ni.edu.uam.nautaticket.service.AuthService.AccesoAutenticado;
 
 import java.io.IOException;
 
@@ -58,7 +59,8 @@ public class LoginController {
 
         try {
             // Se conserva la autenticación BCrypt existente.
-            Usuario usuario = authService.iniciarSesion(correo, password);
+            AccesoAutenticado acceso = authService.iniciarSesionConContexto(correo, password);
+            Usuario usuario = acceso == null ? null : acceso.usuario();
             txtPassword.clear();
 
             if (usuario == null) {
@@ -68,6 +70,7 @@ public class LoginController {
 
             if (usuario.getRol() == null ||
                     !perfilSeleccionado.coincideConRol(usuario.getRol().getNombre())) {
+                acceso.sesion().cerrar();
                 lblMensaje.setText("Tu cuenta no corresponde al perfil "
                         + perfilSeleccionado.getNombreVisible() + ".");
                 return;
@@ -77,7 +80,7 @@ public class LoginController {
                     getClass().getResource("/ni/edu/uam/nautaticket/panel.fxml"));
             Parent root = loader.load();
             PanelController controller = loader.getController();
-            controller.iniciar(usuario);
+            controller.iniciar(usuario, acceso.sesion());
 
             Stage stage = (Stage) txtCorreo.getScene().getWindow();
             stage.setScene(new Scene(root));

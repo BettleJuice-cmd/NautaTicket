@@ -21,6 +21,39 @@
 
     let consultando = false;
     let operando = false;
+    let temporizador = null;
+    let generacionVista = 0;
+    let generacionConsulta = 0;
+
+    function detenerRefresco() {
+        if (temporizador !== null) {
+            clearTimeout(temporizador);
+            temporizador = null;
+        }
+    }
+
+    function programarRefresco() {
+        if (temporizador !== null || seccion.hidden) {
+            return;
+        }
+        temporizador = setTimeout(() => {
+            temporizador = null;
+            if (!seccion.hidden) {
+                consultar();
+                programarRefresco();
+            }
+        }, 5000);
+    }
+
+    function sincronizarRefresco() {
+        if (seccion.hidden) {
+            generacionVista++;
+            detenerRefresco();
+            return;
+        }
+        consultar();
+        programarRefresco();
+    }
 
     const estilos = document.createElement("style");
 
@@ -590,7 +623,7 @@
             ocupado || estado !== "EN_PROCESO";
 
         solucionCampo.disabled =
-            ocupado || estado !== "EN_PROCESO";
+            operando || estado !== "EN_PROCESO";
 
         if (!ticket) {
             tituloSeleccionado.textContent =
@@ -725,7 +758,7 @@
         }
 
         consultando = true;
-        capacidadDisponible = false;
+        generacionConsulta = generacionVista;
 
         actualizarCapacidad();
         actualizarBotones();
@@ -786,6 +819,11 @@
 
         consultando = false;
 
+        if (generacionConsulta !== generacionVista || seccion.hidden) {
+            if (!seccion.hidden) consultar();
+            return;
+        }
+
         pendientes = Array.isArray(datos.pendientes)
             ? datos.pendientes
             : [];
@@ -815,6 +853,11 @@
     window.nautaAtencionDataError = texto => {
 
         consultando = false;
+
+        if (generacionConsulta !== generacionVista || seccion.hidden) {
+            if (!seccion.hidden) consultar();
+            return;
+        }
         capacidadDisponible = false;
 
         actualizarCapacidad();
@@ -848,11 +891,7 @@
             resultado.mensaje || "Operación realizada."
         );
 
-        // No descartamos la solución escrita hasta
-        // que finaliza la operación correctamente.
-        solucionCampo.value = "";
-
-        consultar();
+        if (!seccion.hidden) consultar();
 
         if (window.nautaTicketBridge) {
             try {
@@ -921,13 +960,10 @@
         );
     });
 
-    document.querySelectorAll(
-        '[data-section="atencion"]'
-    ).forEach(boton => {
-
-        boton.addEventListener("click", consultar);
-    });
+    window.addEventListener("nautaSeccionCambiada", sincronizarRefresco);
+    window.addEventListener("pagehide", detenerRefresco);
+    window.addEventListener("beforeunload", detenerRefresco);
 
     renderizar();
-    consultar();
+    sincronizarRefresco();
 })();

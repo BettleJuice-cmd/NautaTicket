@@ -25,6 +25,7 @@ public class HistorialService {
     );
 
     private final HistorialTicketDAO dao;
+    private final AutorizacionService autorizacion;
 
     public HistorialService(SessionFactory sessionFactory) {
         this(sessionFactory, null);
@@ -32,8 +33,10 @@ public class HistorialService {
 
     public HistorialService(SessionFactory sessionFactory, Integer idSolicitante) {
         this.dao = new HistorialTicketDAO(
-                Objects.requireNonNull(sessionFactory), idSolicitante
+                Objects.requireNonNull(sessionFactory), null
         );
+        this.autorizacion = idSolicitante == null ? null
+                : new AutorizacionService(sessionFactory, idSolicitante);
     }
 
     public void registrarCambioEstado(
@@ -135,6 +138,8 @@ public class HistorialService {
             LocalDate hasta,
             String estado) {
 
+        verificarLectura();
+
         if (idTicket != null && idTicket <= 0) {
             throw new IllegalArgumentException(
                     "El ID del ticket debe ser positivo."
@@ -153,9 +158,18 @@ public class HistorialService {
             LocalDate hasta,
             String estado) {
 
+        verificarLectura();
+
         validarFiltros(desde, hasta, estado);
 
         return dao.contarPorEstado(desde, hasta, estado);
+    }
+
+    private void verificarLectura() {
+        if (autorizacion == null) {
+            throw new SecurityException("Se necesita una identidad para consultar el historial.");
+        }
+        autorizacion.exigirRol("ADMIN", "TECNICO");
     }
 
     private void validarFiltros(

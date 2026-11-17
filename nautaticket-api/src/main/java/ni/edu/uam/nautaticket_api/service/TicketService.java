@@ -38,10 +38,6 @@ public class TicketService {
             return ticketRepository.listarPorTecnico(correo);
         }
 
-        if (tieneRol(authentication, "ROLE_EMPLEADO")) {
-            return ticketRepository.listarPorSolicitante(correo);
-        }
-
         throw new AccessDeniedException(
                 "No tiene permisos para consultar tickets"
         );

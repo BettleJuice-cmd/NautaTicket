@@ -336,6 +336,12 @@
         </p>
     `;
 
+    // La cuenta EMPLEADO solo recibe categorías para crear un ticket.
+    if (window.nautaDashboardBridge?.getPerfil() === "Empleado") {
+        seccion.querySelectorAll(".tickets-toolbar, .content-panel, .tickets-caption")
+            .forEach(elemento => { elemento.style.display = "none"; });
+    }
+
     const overlay = document.createElement("div");
     overlay.className = "tickets-modal-overlay";
     overlay.hidden = true;

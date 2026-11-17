@@ -55,3 +55,14 @@ desktop.ini
 *.backup
 *.dump
 *.sql.gz
+*.db
+*.sqlite
+*.sqlite3
+*.pgpass
+pgdata/
+postgres-data/
+postgresql-data/
+
+# Volcados y procesos locales
+*.hprof
+*.pid

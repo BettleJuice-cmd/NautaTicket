@@ -37,7 +37,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/departamentos")
                         .authenticated()
                         .requestMatchers("/api/v1/tickets")
-                        .hasAnyRole("ADMIN", "TECNICO", "EMPLEADO")
+                        .hasAnyRole("ADMIN", "TECNICO")
                         .anyRequest()
                         .denyAll()
                 )
