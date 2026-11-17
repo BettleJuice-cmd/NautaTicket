@@ -1,15 +1,6 @@
 
 package ni.edu.uam.nautaticket.util;
 
-import ni.edu.uam.nautaticket.model.Departamento;
-import ni.edu.uam.nautaticket.model.Rol;
-import ni.edu.uam.nautaticket.model.Usuario;
-import ni.edu.uam.nautaticket.model.EstadoTicket;
-import ni.edu.uam.nautaticket.model.AsignacionTicket;
-import ni.edu.uam.nautaticket.model.Categoria;
-import ni.edu.uam.nautaticket.model.HistorialTicket;
-import ni.edu.uam.nautaticket.model.Ticket;
-
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
@@ -44,16 +35,7 @@ public class HibernateUtil {
     }
 
     static Configuration configuracionBase() {
-        return new Configuration()
-                .configure("hibernate.cfg.xml")
-                .addAnnotatedClass(Departamento.class)
-                .addAnnotatedClass(Rol.class)
-                .addAnnotatedClass(Usuario.class)
-                .addAnnotatedClass(EstadoTicket.class)
-                .addAnnotatedClass(Categoria.class)
-                .addAnnotatedClass(Ticket.class)
-                .addAnnotatedClass(AsignacionTicket.class)
-                .addAnnotatedClass(HistorialTicket.class);
+        return new Configuration().configure("hibernate.cfg.xml");
     }
 
     public static synchronized SessionFactory getSessionFactory() {

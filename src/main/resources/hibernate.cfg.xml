@@ -18,5 +18,14 @@
         <property name="hibernate.format_sql">true</property>
         <property name="hibernate.hbm2ddl.auto">validate</property>
 
+        <mapping class="ni.edu.uam.nautaticket.model.Departamento"/>
+        <mapping class="ni.edu.uam.nautaticket.model.Rol"/>
+        <mapping class="ni.edu.uam.nautaticket.model.Usuario"/>
+        <mapping class="ni.edu.uam.nautaticket.model.EstadoTicket"/>
+        <mapping class="ni.edu.uam.nautaticket.model.Categoria"/>
+        <mapping class="ni.edu.uam.nautaticket.model.Ticket"/>
+        <mapping class="ni.edu.uam.nautaticket.model.AsignacionTicket"/>
+        <mapping class="ni.edu.uam.nautaticket.model.HistorialTicket"/>
+
     </session-factory>
 </hibernate-configuration>
