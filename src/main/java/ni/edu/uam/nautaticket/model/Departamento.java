@@ -11,7 +11,7 @@ public class Departamento {
     @Column(name = "id_departamento")
     private Integer id;
 
-    @Column(name = "nombre", nullable = false)
+    @Column(name = "nombre", nullable = false, unique = true, length = 100)
     private String nombre;
 
     @Column(name = "descripcion")

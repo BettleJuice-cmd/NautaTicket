@@ -104,36 +104,35 @@ public class HistorialTicketDAO {
             LocalDate hasta,
             String estado) {
 
-        StringBuilder sql = new StringBuilder("""
-                SELECT e.nombre, COUNT(*)
-                FROM tickets t
-                JOIN estados_ticket e
-                    ON e.id_estado = t.id_estado
+        StringBuilder hql = new StringBuilder("""
+                SELECT e.nombre, COUNT(t.idTicket)
+                FROM Ticket t
+                JOIN t.estado e
                 WHERE 1 = 1
                 """);
 
         if (desde != null) {
-            sql.append(" AND t.fecha_creacion >= :desde");
+            hql.append(" AND t.fechaCreacion >= :desde");
         }
 
         if (hasta != null) {
-            sql.append(" AND t.fecha_creacion < :hasta");
+            hql.append(" AND t.fechaCreacion < :hasta");
         }
 
         if (estado != null && !estado.isBlank()) {
-            sql.append(" AND e.nombre = :estado");
+            hql.append(" AND e.nombre = :estado");
         }
 
         if (idSolicitante != null) {
-            sql.append(" AND t.id_solicitante = :solicitante");
+            hql.append(" AND t.solicitante.id = :solicitante");
         }
 
-        sql.append(" GROUP BY e.nombre");
+        hql.append(" GROUP BY e.nombre");
 
         try (Session session = sessionFactory.openSession()) {
 
-            var query = session.createNativeQuery(
-                    sql.toString(),
+            var query = session.createQuery(
+                    hql.toString(),
                     Object[].class
             );
 

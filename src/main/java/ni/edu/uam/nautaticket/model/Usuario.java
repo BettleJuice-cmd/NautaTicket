@@ -11,13 +11,13 @@ public class Usuario {
     @Column(name = "id_usuario")
     private Integer id;
 
-    @Column(name = "nombre", nullable = false)
+    @Column(name = "nombre", nullable = false, length = 100)
     private String nombre;
 
-    @Column(name = "apellido", nullable = false)
+    @Column(name = "apellido", nullable = false, length = 100)
     private String apellido;
 
-    @Column(name = "correo", nullable = false, unique = true)
+    @Column(name = "correo", nullable = false, unique = true, length = 150)
     private String correo;
 
     @Column(name = "password_hash", nullable = false)
@@ -30,7 +30,7 @@ public class Usuario {
     @JoinColumn(name = "id_departamento")
     private Departamento departamento;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_rol", nullable = false)
     private Rol rol;
 

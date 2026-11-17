@@ -4,8 +4,13 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.AccessLevel;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "tickets")
@@ -23,9 +28,14 @@ public class Ticket {
     @JoinColumn(name = "id_solicitante", nullable = false)
     private Usuario solicitante;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_categoria", nullable = false)
     private Categoria categoria;
+
+    @OneToMany(mappedBy = "ticket", fetch = FetchType.LAZY)
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private List<AsignacionTicket> asignaciones = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "id_tecnico")
@@ -55,6 +65,35 @@ public class Ticket {
 
     @Column(name = "solucion", columnDefinition = "TEXT")
     private String solucion;
+
+    public List<AsignacionTicket> getAsignaciones() {
+        return Collections.unmodifiableList(asignaciones);
+    }
+
+    public void agregarAsignacion(AsignacionTicket asignacion) {
+        Objects.requireNonNull(asignacion, "La asignación es obligatoria.");
+        if (asignacion.getTicket() != null && asignacion.getTicket() != this) {
+            throw new IllegalArgumentException("La asignación pertenece a otro ticket.");
+        }
+        if (asignacion.getIdAsignacion() != null) {
+            throw new IllegalStateException("Una asignación guardada no puede agregarse de nuevo.");
+        }
+        if (!asignaciones.contains(asignacion)) {
+            asignaciones.add(asignacion);
+        }
+        asignacion.setTicket(this);
+    }
+
+    public void retirarAsignacion(AsignacionTicket asignacion) {
+        if (asignacion == null || asignacion.getTicket() != this) {
+            return;
+        }
+        if (asignacion.getIdAsignacion() != null) {
+            throw new IllegalStateException("Una asignación guardada forma parte del historial.");
+        }
+        asignaciones.remove(asignacion);
+        asignacion.setTicket(null);
+    }
 
     @PrePersist
     public void antesDeGuardar() {
