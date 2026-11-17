@@ -16,9 +16,9 @@
             </HBox>
             <FlowPane hgap="8" vgap="8">
                 <Button fx:id="botonAdministracion" text="Administración" onAction="#abrirAdministracion"/>
-                <Button text="Tickets" onAction="#abrirTickets"/>
+                <Button fx:id="botonTickets" text="Tickets" onAction="#abrirTickets"/>
                 <Button fx:id="botonAtencion" text="Atención FIFO" onAction="#abrirAtencion"/>
-                <Button text="Historial" onAction="#abrirHistorial"/>
+                <Button fx:id="botonHistorial" text="Historial" onAction="#abrirHistorial"/>
                 <Button fx:id="botonDashboard" text="Estadísticas" onAction="#abrirDashboard"/>
             </FlowPane>
             <Label fx:id="mensaje" wrapText="true" style="-fx-text-fill: #a12620;"/>

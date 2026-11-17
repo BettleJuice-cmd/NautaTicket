@@ -20,12 +20,17 @@ public class AtencionService {
     private final SessionFactory sessionFactory;
     private final AsignacionTicketDao dao;
     private final HistorialService historialService;
+    private final SesionAutenticada sesion;
 
     public AtencionService() {
-        this(HibernateUtil.getSessionFactory());
+        this(HibernateUtil.getSessionFactory(), null);
     }
 
     public AtencionService(SessionFactory sessionFactory) {
+        this(sessionFactory, null);
+    }
+
+    public AtencionService(SessionFactory sessionFactory, SesionAutenticada sesion) {
 
         if (sessionFactory == null) {
             throw new IllegalArgumentException(
@@ -34,11 +39,13 @@ public class AtencionService {
         }
 
         this.sessionFactory = sessionFactory;
+        this.sesion = sesion;
         this.dao = new AsignacionTicketDao(sessionFactory);
         this.historialService = new HistorialService(sessionFactory);
     }
 
     public List<TicketFila> listarPendientes() {
+        verificarTecnicoActivo(identidad());
         return dao.listarPendientes();
     }
 
@@ -336,6 +343,10 @@ public class AtencionService {
             );
         }
 
+        if (identidad() != idTecnico) {
+            throw new SecurityException("No puedes atender tickets de otro técnico.");
+        }
+
         return session.createSelectionQuery("""
                 FROM Usuario u
                 WHERE u.id = :tecnico
@@ -353,5 +364,12 @@ public class AtencionService {
                                         + "puede atender tickets."
                         )
                 );
+    }
+
+    private int identidad() {
+        if (sesion == null) {
+            throw new SecurityException("Debes iniciar sesión para consultar Atención.");
+        }
+        return sesion.usuarioId();
     }
 }

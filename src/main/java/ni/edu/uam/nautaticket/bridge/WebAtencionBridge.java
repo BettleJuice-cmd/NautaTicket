@@ -7,6 +7,7 @@ import javafx.scene.web.WebEngine;
 import ni.edu.uam.nautaticket.dao.AsignacionTicketDao.TicketFila;
 import ni.edu.uam.nautaticket.model.Usuario;
 import ni.edu.uam.nautaticket.service.AtencionService;
+import ni.edu.uam.nautaticket.service.SesionAutenticada;
 import ni.edu.uam.nautaticket.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -31,6 +32,7 @@ public class WebAtencionBridge {
     private final WebEngine engine;
     private final String paginaPermitida;
     private final int tecnicoId;
+    private final SesionAutenticada sesionAutenticada;
     private final SessionFactory sessionFactory;
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -41,7 +43,8 @@ public class WebAtencionBridge {
     public WebAtencionBridge(
             WebEngine engine,
             String paginaPermitida,
-            Usuario usuario
+            Usuario usuario,
+            SesionAutenticada sesionAutenticada
     ) {
         if (usuario == null || usuario.getId() == null) {
             throw new SecurityException(
@@ -52,6 +55,10 @@ public class WebAtencionBridge {
         this.engine = engine;
         this.paginaPermitida = paginaPermitida;
         this.tecnicoId = usuario.getId();
+        if (sesionAutenticada == null || sesionAutenticada.usuarioId() != tecnicoId) {
+            throw new SecurityException("La identidad autenticada no corresponde al técnico.");
+        }
+        this.sesionAutenticada = sesionAutenticada;
         this.sessionFactory = HibernateUtil.getSessionFactory();
     }
 
@@ -75,7 +82,7 @@ public class WebAtencionBridge {
                 verificarTecnico();
 
                 AtencionService servicio =
-                        new AtencionService(sessionFactory);
+                        new AtencionService(sessionFactory, sesionAutenticada);
 
                 return construirDatos(servicio);
             }
@@ -156,7 +163,7 @@ public class WebAtencionBridge {
                 verificarTecnico();
 
                 AtencionService servicio =
-                        new AtencionService(sessionFactory);
+                        new AtencionService(sessionFactory, sesionAutenticada);
 
                 return switch (accion) {
 

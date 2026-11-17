@@ -49,6 +49,7 @@ public class WebPreviewApp extends Application {
     private WebEstadisticasBridge estadisticasBridge;
 
     private Usuario usuarioAutenticado;
+    private ni.edu.uam.nautaticket.service.SesionAutenticada sesionAutenticada;
     private String perfilAutenticado;
 
     @Override
@@ -202,15 +203,17 @@ public class WebPreviewApp extends Application {
     }
 
     private void autenticacionCorrecta(
-            Usuario usuario,
+            ni.edu.uam.nautaticket.service.AuthService.AccesoAutenticado acceso,
             String perfil
     ) {
+        Usuario usuario = acceso == null ? null : acceso.usuario();
 
         if (usuario == null || usuario.getId() == null) {
             return;
         }
 
         usuarioAutenticado = usuario;
+        sesionAutenticada = acceso.sesion();
         perfilAutenticado = perfil;
 
         LOGGER.info(
@@ -269,24 +272,21 @@ public class WebPreviewApp extends Application {
                 );
             }
 
-            ticketBridge = new WebTicketBridge(
-                    engine,
-                    direccion,
-                    usuarioAutenticado,
-                    HibernateUtil.getSessionFactory()
-            );
-
-            ventana.setMember(
-                    "nautaTicketBridge",
-                    ticketBridge
-            );
+            if (esAdministrador() || "EMPLEADO".equalsIgnoreCase(
+                    usuarioAutenticado.getRol().getNombre())) {
+                ticketBridge = new WebTicketBridge(
+                        engine, direccion, usuarioAutenticado,
+                        HibernateUtil.getSessionFactory());
+                ventana.setMember("nautaTicketBridge", ticketBridge);
+            }
 
             if (esTecnico()) {
 
                 atencionBridge = new WebAtencionBridge(
                         engine,
                         direccion,
-                        usuarioAutenticado
+                        usuarioAutenticado,
+                        sesionAutenticada
                 );
 
                 ventana.setMember(
@@ -492,6 +492,8 @@ public class WebPreviewApp extends Application {
     private void limpiarSesion() {
 
         desactivarPuentes();
+        if (sesionAutenticada != null) sesionAutenticada.cerrar();
+        sesionAutenticada = null;
 
         usuarioAutenticado = null;
         perfilAutenticado = null;

@@ -5,8 +5,8 @@ import javafx.concurrent.Task;
 import javafx.scene.web.WebEngine;
 
 import ni.edu.uam.nautaticket.controller.PerfilAcceso;
-import ni.edu.uam.nautaticket.model.Usuario;
 import ni.edu.uam.nautaticket.service.AuthService;
+import ni.edu.uam.nautaticket.service.AuthService.AccesoAutenticado;
 
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
@@ -19,14 +19,14 @@ public class WebLoginBridge {
 
     private final WebEngine engine;
     private final String paginaPermitida;
-    private final BiConsumer<Usuario, String> alAutenticar;
+    private final BiConsumer<AccesoAutenticado, String> alAutenticar;
 
     private boolean procesando;
 
     public WebLoginBridge(
             WebEngine engine,
             String paginaPermitida,
-            BiConsumer<Usuario, String> alAutenticar
+            BiConsumer<AccesoAutenticado, String> alAutenticar
     ) {
         this.engine = engine;
         this.paginaPermitida = paginaPermitida;
@@ -65,13 +65,13 @@ public class WebLoginBridge {
 
         procesando = true;
 
-        Task<Usuario> tarea = new Task<>() {
+        Task<AccesoAutenticado> tarea = new Task<>() {
 
             @Override
-            protected Usuario call() {
+            protected AccesoAutenticado call() {
                 AuthService servicio = new AuthService();
 
-                return servicio.iniciarSesion(
+                return servicio.iniciarSesionConContexto(
                         correoNormalizado,
                         password
                 );
@@ -83,7 +83,8 @@ public class WebLoginBridge {
             procesando = false;
 
             try {
-                Usuario usuario = tarea.getValue();
+                AccesoAutenticado acceso = tarea.getValue();
+                var usuario = acceso == null ? null : acceso.usuario();
 
                 if (usuario == null
                         || usuario.getRol() == null
@@ -91,6 +92,7 @@ public class WebLoginBridge {
                         usuario.getRol().getNombre()
                 )) {
 
+                    if (acceso != null) acceso.sesion().cerrar();
                     mostrarError(
                             "Correo, contraseña o perfil incorrectos."
                     );
@@ -98,7 +100,7 @@ public class WebLoginBridge {
                 }
 
                 alAutenticar.accept(
-                        usuario,
+                        acceso,
                         nombrePerfil(perfil)
                 );
 

@@ -14,6 +14,7 @@ import ni.edu.uam.nautaticket.model.Usuario;
 import ni.edu.uam.nautaticket.service.AtencionService;
 import ni.edu.uam.nautaticket.service.HistorialService;
 import ni.edu.uam.nautaticket.service.ReporteService;
+import ni.edu.uam.nautaticket.service.SesionAutenticada;
 import ni.edu.uam.nautaticket.util.HibernateUtil;
 
 import java.io.IOException;
@@ -26,10 +27,13 @@ public class PanelController {
     @FXML private Label mensaje;
 
     @FXML private Button botonAdministracion;
+    @FXML private Button botonTickets;
     @FXML private Button botonAtencion;
+    @FXML private Button botonHistorial;
     @FXML private Button botonDashboard;
 
     private Usuario usuario;
+    private SesionAutenticada sesionAutenticada;
 
     private boolean administrador;
     private boolean tecnico;
@@ -62,7 +66,7 @@ public class PanelController {
         }
     }
 
-    public void iniciar(Usuario usuario) {
+    public void iniciar(Usuario usuario, SesionAutenticada sesionAutenticada) {
 
         if (usuario == null
                 || usuario.getId() == null
@@ -91,7 +95,11 @@ public class PanelController {
             );
         };
 
+        if (sesionAutenticada == null || sesionAutenticada.usuarioId() != usuario.getId()) {
+            throw new SecurityException("La identidad autenticada no corresponde al usuario.");
+        }
         this.usuario = usuario;
+        this.sesionAutenticada = sesionAutenticada;
 
         administrador = "ADMIN".equals(rol);
         tecnico = "TECNICO".equals(rol);
@@ -109,6 +117,9 @@ public class PanelController {
                 botonAdministracion,
                 administrador
         );
+
+        habilitar(botonTickets, administrador || "EMPLEADO".equals(rol));
+        habilitar(botonHistorial, supervision);
 
         // Atención exclusiva de técnicos TI.
         habilitar(
@@ -170,6 +181,7 @@ public class PanelController {
     private void cerrarSesion() {
 
         try {
+            if (sesionAutenticada != null) sesionAutenticada.cerrar();
 
             NautaTicketApp.mostrarBienvenida(
                     (Stage) sesion.getScene().getWindow()
@@ -203,7 +215,8 @@ public class PanelController {
 
             case DASHBOARD -> supervision;
 
-            case TICKETS, HISTORIAL -> true;
+            case TICKETS -> administrador || "EMPLEADO".equals(usuario.getRol().getNombre());
+            case HISTORIAL -> supervision;
         };
 
         if (!permitida) {
@@ -284,7 +297,7 @@ public class PanelController {
                 );
 
                 atencion.setServicio(
-                        new AtencionService()
+                        new AtencionService(HibernateUtil.getSessionFactory(), sesionAutenticada)
                 );
 
                 // Evitar volver a enlazar la propiedad
@@ -303,9 +316,7 @@ public class PanelController {
                 historial.setHistorialService(
                         new HistorialService(
                                 HibernateUtil.getSessionFactory(),
-                                supervision
-                                        ? null
-                                        : usuario.getId()
+                                usuario.getId()
                         )
                 );
             }
@@ -320,7 +331,7 @@ public class PanelController {
 
                 dashboard.setHistorialService(
                         new HistorialService(
-                                HibernateUtil.getSessionFactory()
+                                HibernateUtil.getSessionFactory(), usuario.getId()
                         )
                 );
 

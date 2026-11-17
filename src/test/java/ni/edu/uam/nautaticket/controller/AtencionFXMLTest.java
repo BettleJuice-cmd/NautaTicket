@@ -26,6 +26,11 @@ class AtencionFXMLTest {
                 assertNotNull(recurso);
                 var loader = new FXMLLoader(recurso);
                 loader.load();
+                var panel = new FXMLLoader(AtencionFXMLTest.class.getResource(
+                        "/ni/edu/uam/nautaticket/panel.fxml"));
+                panel.load();
+                assertNotNull(panel.getNamespace().get("botonTickets"));
+                assertNotNull(panel.getNamespace().get("botonHistorial"));
                 resultado.complete(loader);
             } catch (Throwable error) {
                 resultado.completeExceptionally(error);

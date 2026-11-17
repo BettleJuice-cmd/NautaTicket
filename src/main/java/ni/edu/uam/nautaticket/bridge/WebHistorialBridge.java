@@ -116,14 +116,10 @@ public class WebHistorialBridge {
                     );
                 }
 
-                Integer filtroSolicitante =
-                        obtenerAlcanceAutorizado();
+                obtenerAlcanceAutorizado();
 
                 HistorialService servicio =
-                        new HistorialService(
-                                sessionFactory,
-                                filtroSolicitante
-                        );
+                        new HistorialService(sessionFactory, usuarioId);
 
                 List<HistorialTicket> movimientos =
                         servicio.buscar(

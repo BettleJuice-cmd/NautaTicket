@@ -6,6 +6,7 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import ni.edu.uam.nautaticket.dao.CategoriaDAO;
 import ni.edu.uam.nautaticket.dao.TicketDAO;
 import ni.edu.uam.nautaticket.model.Categoria;
@@ -24,6 +25,9 @@ public class TicketController {
     @FXML private ComboBox<Categoria> cmbFiltroCategoria;
 
     @FXML private TableView<Ticket> tablaTickets;
+    @FXML private Button botonActualizarTicket;
+    @FXML private Button botonEliminarTicket;
+    @FXML private HBox filtrosTickets;
     @FXML private TableColumn<Ticket, Integer> colId;
     @FXML private TableColumn<Ticket, String> colTitulo;
     @FXML private TableColumn<Ticket, String> colCategoria;
@@ -33,6 +37,7 @@ public class TicketController {
     private final TicketService ticketService;
     private final CategoriaDAO categoriaDAO;
     private final Integer idSolicitante;
+    private final boolean administrarTickets;
 
     private final DateTimeFormatter formatoFecha =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -56,16 +61,23 @@ public class TicketController {
                     "Debe existir un usuario autenticado.");
         }
 
-        this.ticketService =
-                new TicketService(new TicketDAO(
-                        sessionFactory, administrarTickets ? null : idSolicitante));
+        this.ticketService = new TicketService(sessionFactory, idSolicitante);
 
         this.categoriaDAO = new CategoriaDAO(sessionFactory);
         this.idSolicitante = idSolicitante;
+        this.administrarTickets = administrarTickets;
     }
 
     @FXML
     private void initialize() {
+
+        if (!administrarTickets) {
+            for (var control : new javafx.scene.Node[]{botonActualizarTicket,
+                    botonEliminarTicket, filtrosTickets, tablaTickets}) {
+                control.setVisible(false);
+                control.setManaged(false);
+            }
+        }
 
         colId.setCellValueFactory(data ->
                 new ReadOnlyObjectWrapper<>(data.getValue().getIdTicket()));
@@ -100,7 +112,7 @@ public class TicketController {
                 });
 
         cargarCategorias();
-        cargarTickets();
+        if (administrarTickets) cargarTickets();
     }
 
     private void cargarCategorias() {
@@ -142,7 +154,7 @@ public class TicketController {
 
             mostrarInformacion("Ticket registrado correctamente.");
             limpiarFormulario();
-            cargarTickets();
+            if (administrarTickets) cargarTickets();
 
         } catch (RuntimeException e) {
             mostrarError(e.getMessage());
