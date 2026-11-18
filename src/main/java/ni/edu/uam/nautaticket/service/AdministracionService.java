@@ -2,6 +2,7 @@ package ni.edu.uam.nautaticket.service;
 
 import ni.edu.uam.nautaticket.dao.*;
 import ni.edu.uam.nautaticket.model.*;
+import ni.edu.uam.nautaticket.util.HibernateUtil;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.List;
@@ -152,7 +153,65 @@ public class AdministracionService {
         usuarioDao.desactivar(id);
     }
 
-    public void crearDepartamento(String nombre, String descripcion) {
+    public void reactivarUsuario(Integer id) {
+
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException(
+                    "Selecciona un usuario válido para reactivar."
+            );
+        }
+
+        HibernateUtil.getSessionFactory().inTransaction(session -> {
+
+            // La identidad del administrador proviene del
+            // usuario autenticado por Java, no del frontend.
+
+            Usuario administrador = session.find(
+                    Usuario.class,
+                    administradorId
+            );
+
+            if (administrador == null
+                    || !administrador.isActivo()
+                    || administrador.getRol() == null
+                    || !"ADMIN".equalsIgnoreCase(
+                    administrador.getRol().getNombre())) {
+
+                throw new SecurityException(
+                        "No tiene permisos de administrador."
+                );
+            }
+
+            // session.find incluye usuarios inactivos.
+            Usuario usuario = session.find(
+                    Usuario.class,
+                    id
+            );
+
+            if (usuario == null) {
+                throw new IllegalArgumentException(
+                        "El usuario que deseas reactivar no existe."
+                );
+            }
+
+            if (usuario.isActivo()) {
+                throw new IllegalArgumentException(
+                        "El usuario ya se encuentra activo."
+                );
+            }
+
+            // Solo modificamos el indicador lógico.
+            // Hibernate sincroniza el cambio al confirmar
+            // la transacción.
+
+            usuario.setActivo(true);
+        });
+    }
+
+    public void crearDepartamento(
+            String nombre,
+            String descripcion
+    ) {
         verificarAdministrador();
 
         if (nombre == null || nombre.isBlank()) {
@@ -162,16 +221,25 @@ public class AdministracionService {
         }
 
         String nombreNormalizado = nombre.trim();
-        if (nombreNormalizado.codePointCount(0, nombreNormalizado.length()) > LIMITE_NOMBRE_DEPARTAMENTO) {
+
+        if (nombreNormalizado.codePointCount(
+                0,
+                nombreNormalizado.length()
+        ) > LIMITE_NOMBRE_DEPARTAMENTO) {
+
             throw new IllegalArgumentException(
-                    "El nombre del departamento no puede superar " + LIMITE_NOMBRE_DEPARTAMENTO + " caracteres"
+                    "El nombre del departamento no puede superar "
+                            + LIMITE_NOMBRE_DEPARTAMENTO
+                            + " caracteres"
             );
         }
 
         departamentoDao.guardar(
                 new Departamento(
                         nombreNormalizado,
-                        descripcion == null ? "" : descripcion.trim()
+                        descripcion == null
+                                ? ""
+                                : descripcion.trim()
                 )
         );
     }
@@ -181,7 +249,8 @@ public class AdministracionService {
             String apellido,
             String correo,
             Rol rol,
-            Departamento departamento) {
+            Departamento departamento
+    ) {
 
         if (nombre == null || nombre.isBlank()
                 || apellido == null || apellido.isBlank()) {
@@ -190,8 +259,10 @@ public class AdministracionService {
             );
         }
 
-        if (correo == null ||
-                !correo.trim().matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+        if (correo == null
+                || !correo.trim().matches(
+                "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+        )) {
             throw new IllegalArgumentException(
                     "Ingresa un correo válido"
             );

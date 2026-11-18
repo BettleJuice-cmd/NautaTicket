@@ -1,6 +1,4 @@
-
 package ni.edu.uam.nautaticket.controller;
-
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
@@ -10,14 +8,17 @@ import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
-
 import ni.edu.uam.nautaticket.model.*;
 import ni.edu.uam.nautaticket.service.AdministracionService;
-
 import java.text.Normalizer;
 import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class AdminController {
+
+    private static final Logger LOGGER =
+            Logger.getLogger(AdminController.class.getName());
 
     @FXML private TextField txtNombre;
     @FXML private TextField txtApellido;
@@ -34,6 +35,9 @@ public class AdminController {
     @FXML private TableColumn<Usuario, String> colRol;
     @FXML private TableColumn<Usuario, String> colDepartamento;
     @FXML private TableColumn<Usuario, String> colEstado;
+
+    @FXML private Button btnDesactivar;
+    @FXML private Button btnReactivar;
 
     @FXML private TextField txtNombreDepartamento;
     @FXML private TextArea txtDescripcionDepartamento;
@@ -64,7 +68,24 @@ public class AdminController {
                     if (actual != null) {
                         cargarFormulario(actual);
                     }
+
+                    actualizarBotones(actual);
                 });
+
+        actualizarBotones(null);
+    }
+
+    private void actualizarBotones(Usuario usuario) {
+
+        boolean seleccionado = usuario != null;
+
+        btnDesactivar.setDisable(
+                !seleccionado || !usuario.isActivo()
+        );
+
+        btnReactivar.setDisable(
+                !seleccionado || usuario.isActivo()
+        );
     }
 
     private void configurarColumnas() {
@@ -77,8 +98,8 @@ public class AdminController {
 
         colNombre.setCellValueFactory(c ->
                 new ReadOnlyStringWrapper(
-                        valor(c.getValue().getNombre()) + " " +
-                                valor(c.getValue().getApellido())
+                        valor(c.getValue().getNombre()) + " "
+                                + valor(c.getValue().getApellido())
                 )
         );
 
@@ -133,21 +154,20 @@ public class AdminController {
         tablaUsuarios.setItems(usuariosOrdenados);
 
         buscarUsuarios = new TextField();
-
         buscarUsuarios.setPromptText("Filtrar usuarios");
         buscarUsuarios.setPrefWidth(185);
         buscarUsuarios.setMaxWidth(Double.MAX_VALUE);
 
         buscarUsuarios.setStyle(
-                "-fx-font-size: 11px;" +
-                        "-fx-background-radius: 5px;"
+                "-fx-font-size: 11px;"
+                        + "-fx-background-radius: 5px;"
         );
 
         Label etiqueta = new Label("Usuario");
 
         etiqueta.setStyle(
-                "-fx-font-weight: bold;" +
-                        "-fx-font-size: 11px;"
+                "-fx-font-weight: bold;"
+                        + "-fx-font-size: 11px;"
         );
 
         VBox cabecera = new VBox(
@@ -179,8 +199,8 @@ public class AdminController {
             }
 
             String nombreCompleto =
-                    valor(usuario.getNombre()) + " " +
-                            valor(usuario.getApellido());
+                    valor(usuario.getNombre()) + " "
+                            + valor(usuario.getApellido());
 
             String correo = valor(usuario.getCorreo());
 
@@ -239,9 +259,7 @@ public class AdminController {
             Usuario administrador
     ) {
 
-        servicio = new AdministracionService(
-                administrador
-        );
+        servicio = new AdministracionService(administrador);
 
         lblSesion.setText(
                 "Administrador: " + administrador.getNombre()
@@ -277,17 +295,9 @@ public class AdminController {
 
     private void cargarFormulario(Usuario usuario) {
 
-        txtNombre.setText(
-                valor(usuario.getNombre())
-        );
-
-        txtApellido.setText(
-                valor(usuario.getApellido())
-        );
-
-        txtCorreo.setText(
-                valor(usuario.getCorreo())
-        );
+        txtNombre.setText(valor(usuario.getNombre()));
+        txtApellido.setText(valor(usuario.getApellido()));
+        txtCorreo.setText(valor(usuario.getCorreo()));
 
         txtPassword.clear();
 
@@ -353,7 +363,6 @@ public class AdminController {
                         .getSelectedItem();
 
         if (seleccionado == null) {
-
             lblMensaje.setText(
                     "Selecciona un usuario para actualizar"
             );
@@ -391,25 +400,24 @@ public class AdminController {
                 tablaUsuarios.getSelectionModel()
                         .getSelectedItem();
 
-        if (seleccionado == null) {
-
+        if (seleccionado == null || !seleccionado.isActivo()) {
             lblMensaje.setText(
-                    "Selecciona un usuario"
+                    "Selecciona un usuario activo."
             );
             return;
         }
 
         Alert confirmacion = new Alert(
                 Alert.AlertType.CONFIRMATION,
-                "¿Desactivar a " +
-                        seleccionado.getNombre() + "?",
+                "¿Desactivar a "
+                        + seleccionado.getNombre()
+                        + "?",
                 ButtonType.YES,
                 ButtonType.NO
         );
 
         if (confirmacion.showAndWait()
-                .orElse(ButtonType.NO)
-                != ButtonType.YES) {
+                .orElse(ButtonType.NO) != ButtonType.YES) {
             return;
         }
 
@@ -422,8 +430,52 @@ public class AdminController {
             recargarDatos();
             limpiarFormulario();
 
+            lblMensaje.setText("Usuario desactivado");
+
+        } catch (Exception e) {
+            mostrarError(e);
+        }
+    }
+
+    @FXML
+    private void reactivarUsuario() {
+
+        Usuario seleccionado =
+                tablaUsuarios.getSelectionModel()
+                        .getSelectedItem();
+
+        if (seleccionado == null || seleccionado.isActivo()) {
             lblMensaje.setText(
-                    "Usuario desactivado"
+                    "Selecciona un usuario inactivo."
+            );
+            return;
+        }
+
+        Alert confirmacion = new Alert(
+                Alert.AlertType.CONFIRMATION,
+                "¿Reactivar a "
+                        + seleccionado.getNombre()
+                        + "?",
+                ButtonType.YES,
+                ButtonType.NO
+        );
+
+        if (confirmacion.showAndWait()
+                .orElse(ButtonType.NO) != ButtonType.YES) {
+            return;
+        }
+
+        try {
+
+            servicio.reactivarUsuario(
+                    seleccionado.getId()
+            );
+
+            recargarDatos();
+            limpiarFormulario();
+
+            lblMensaje.setText(
+                    "Usuario reactivado correctamente."
             );
 
         } catch (Exception e) {
@@ -468,18 +520,23 @@ public class AdminController {
 
         cbRol.setValue(null);
         cbDepartamento.setValue(null);
+
+        actualizarBotones(null);
     }
 
     private void mostrarError(Exception e) {
 
-        if (e instanceof IllegalArgumentException) {
+        if (e instanceof IllegalArgumentException
+                || e instanceof SecurityException) {
+
             lblMensaje.setText(e.getMessage());
+
         } else {
-            lblMensaje.setText(
-                    "No se pudo completar la operación"
-            );
+
+            lblMensaje.setText("No se pudo completar la operación");
         }
 
-        e.printStackTrace();
+        LOGGER.log(
+                Level.WARNING, "Error en administración", e);
     }
 }
