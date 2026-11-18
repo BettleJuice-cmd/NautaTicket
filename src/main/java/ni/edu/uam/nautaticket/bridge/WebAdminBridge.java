@@ -1,6 +1,4 @@
-
 package ni.edu.uam.nautaticket.bridge;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.concurrent.Task;
@@ -9,7 +7,6 @@ import ni.edu.uam.nautaticket.model.Departamento;
 import ni.edu.uam.nautaticket.model.Rol;
 import ni.edu.uam.nautaticket.model.Usuario;
 import ni.edu.uam.nautaticket.service.AdministracionService;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,9 +35,47 @@ public class WebAdminBridge {
             String paginaPermitida,
             Usuario administrador
     ) {
+        if (administrador == null
+                || administrador.getId() == null) {
+            throw new SecurityException(
+                    "Se requiere una sesión autenticada."
+            );
+        }
+
         this.engine = engine;
         this.paginaPermitida = paginaPermitida;
         this.administrador = administrador;
+
+        cargarInterfazReactivacion();
+    }
+
+    private void cargarInterfazReactivacion() {
+
+        if (!paginaAutorizada()) {
+            return;
+        }
+
+        if (getClass().getResource(
+                "/web/js/reactivacion.js"
+        ) == null) {
+            throw new IllegalStateException(
+                    "No se encontró reactivacion.js."
+            );
+        }
+
+        engine.executeScript("""
+                (function () {
+                    if (document.getElementById(
+                            'nautaReactivacionScript')) {
+                        return;
+                    }
+
+                    var script = document.createElement('script');
+                    script.id = 'nautaReactivacionScript';
+                    script.src = 'js/reactivacion.js';
+                    document.body.appendChild(script);
+                })();
+                """);
     }
 
     public void desactivar() {
@@ -59,6 +94,7 @@ public class WebAdminBridge {
 
             @Override
             protected Map<String, Object> call() {
+
                 verificarActivo();
 
                 AdministracionService servicio =
@@ -97,7 +133,10 @@ public class WebAdminBridge {
             );
         });
 
-        iniciarTarea(tarea, "nautaticket-admin-consulta");
+        iniciarTarea(
+                tarea,
+                "nautaticket-admin-consulta"
+        );
     }
 
     public void ejecutarAccion(
@@ -120,7 +159,10 @@ public class WebAdminBridge {
         if (accion == null || datosJson == null
                 || datosJson.length() > 16384) {
 
-            enviarResultado(false, "Solicitud inválida.");
+            enviarResultado(
+                    false,
+                    "Solicitud inválida."
+            );
             return;
         }
 
@@ -160,7 +202,10 @@ public class WebAdminBridge {
                 return;
             }
 
-            enviarResultado(true, tarea.getValue());
+            enviarResultado(
+                    true,
+                    tarea.getValue()
+            );
         });
 
         tarea.setOnFailed(event -> {
@@ -175,14 +220,20 @@ public class WebAdminBridge {
                     error
             );
 
-            String mensaje = error instanceof IllegalArgumentException
-                    ? error.getMessage()
-                    : "No se pudo completar la operación.";
+            String mensaje =
+                    error instanceof IllegalArgumentException
+                            ? error.getMessage()
+                            : error instanceof SecurityException
+                            ? "No tienes autorización para esta operación."
+                            : "No se pudo completar la operación.";
 
             enviarResultado(false, mensaje);
         });
 
-        iniciarTarea(tarea, "nautaticket-admin-operacion");
+        iniciarTarea(
+                tarea,
+                "nautaticket-admin-operacion"
+        );
     }
 
     private String ejecutarOperacion(
@@ -251,6 +302,15 @@ public class WebAdminBridge {
                 );
 
                 yield "Usuario desactivado correctamente.";
+            }
+
+            case "reactivarUsuario" -> {
+
+                servicio.reactivarUsuario(
+                        entero(datos, "id")
+                );
+
+                yield "Usuario reactivado correctamente.";
             }
 
             case "crearDepartamento" -> {
@@ -345,7 +405,10 @@ public class WebAdminBridge {
                             : usuario.getDepartamento().getId()
             );
 
-            fila.put("activo", usuario.isActivo());
+            fila.put(
+                    "activo",
+                    usuario.isActivo()
+            );
 
             if (usuario.isActivo()) {
                 usuariosActivos++;
@@ -361,8 +424,16 @@ public class WebAdminBridge {
         resultado.put("roles", roles);
         resultado.put("departamentos", departamentos);
 
-        resultado.put("totalUsuarios", usuarios.size());
-        resultado.put("usuariosActivos", usuariosActivos);
+        resultado.put(
+                "totalUsuarios",
+                usuarios.size()
+        );
+
+        resultado.put(
+                "usuariosActivos",
+                usuariosActivos
+        );
+
         resultado.put(
                 "totalDepartamentos",
                 departamentos.size()
@@ -417,7 +488,10 @@ public class WebAdminBridge {
                 );
     }
 
-    private String texto(JsonNode datos, String campo) {
+    private String texto(
+            JsonNode datos,
+            String campo
+    ) {
 
         JsonNode valor = datos.get(campo);
 
@@ -434,7 +508,10 @@ public class WebAdminBridge {
         return valor.asText();
     }
 
-    private Integer entero(JsonNode datos, String campo) {
+    private Integer entero(
+            JsonNode datos,
+            String campo
+    ) {
 
         JsonNode valor = datos.get(campo);
 
@@ -442,7 +519,9 @@ public class WebAdminBridge {
             return null;
         }
 
-        if (!valor.isIntegralNumber() || !valor.canConvertToInt()) {
+        if (!valor.isIntegralNumber()
+                || !valor.canConvertToInt()) {
+
             throw new IllegalArgumentException(
                     "El campo " + campo + " no es válido."
             );
@@ -468,7 +547,9 @@ public class WebAdminBridge {
         );
     }
 
-    private void enviarErrorConsulta(String mensaje) {
+    private void enviarErrorConsulta(
+            String mensaje
+    ) {
 
         if (!paginaAutorizada()) {
             return;
@@ -491,19 +572,18 @@ public class WebAdminBridge {
 
         try {
 
-            String json = mapper.writeValueAsString(datos);
+            String json =
+                    mapper.writeValueAsString(datos);
 
-            // JSON.parse recibe una cadena escapada.
-            // No concatenamos datos de BD como código JS.
             String argumento =
                     mapper.writeValueAsString(json);
 
             engine.executeScript(
-                    "if (typeof window." + funcion +
-                            " === 'function') {" +
-                            "window." + funcion +
-                            "(JSON.parse(" + argumento + "));" +
-                            "}"
+                    "if (typeof window." + funcion
+                            + " === 'function') {"
+                            + "window." + funcion
+                            + "(JSON.parse(" + argumento + "));"
+                            + "}"
             );
 
         } catch (Exception e) {
@@ -528,7 +608,9 @@ public class WebAdminBridge {
     private boolean paginaAutorizada() {
 
         return activo.get()
-                && paginaPermitida.equals(engine.getLocation())
+                && paginaPermitida.equals(
+                engine.getLocation()
+        )
                 && administrador != null
                 && administrador.getId() != null;
     }
