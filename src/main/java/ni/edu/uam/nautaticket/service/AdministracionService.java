@@ -67,6 +67,13 @@ public class AdministracionService {
         verificarAdministrador();
         validarDatos(nombre, apellido, correo, rol, departamento);
 
+        if ("ADMIN".equalsIgnoreCase(rol.getNombre())) {
+            throw new IllegalArgumentException(
+                    "No se permite registrar nuevos administradores"
+            );
+        }
+
+
         Usuario usuario = new Usuario();
         usuario.setNombre(nombre.trim());
         usuario.setApellido(apellido.trim());
@@ -112,6 +119,24 @@ public class AdministracionService {
                     "El correo ya está registrado"
             );
         }
+
+        if (rol == null) {
+            throw new IllegalArgumentException("Selecciona un rol");
+        }
+
+        boolean esAdminActual =
+                usuario.getRol() != null
+                        && "ADMIN".equalsIgnoreCase(usuario.getRol().getNombre());
+
+        boolean esAdminNuevo =
+                "ADMIN".equalsIgnoreCase(rol.getNombre());
+
+        if (esAdminActual != esAdminNuevo) {
+            throw new IllegalArgumentException(
+                    "No se permite asignar ni modificar el rol de administrador"
+            );
+        }
+
 
         usuario.setNombre(nombre.trim());
         usuario.setApellido(apellido.trim());

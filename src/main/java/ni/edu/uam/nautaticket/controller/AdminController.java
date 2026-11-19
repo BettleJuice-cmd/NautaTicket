@@ -250,6 +250,7 @@ public class AdminController {
         recargarDatos();
     }
 
+
     private void recargarDatos() {
 
         if (servicio == null) {
@@ -258,6 +259,13 @@ public class AdminController {
 
         cbRol.getItems().setAll(
                 servicio.listarRoles()
+                        .stream()
+                        .filter(rol ->
+                                !"ADMIN".equalsIgnoreCase(
+                                        rol.getNombre()
+                                )
+                        )
+                        .toList()
         );
 
         cbDepartamento.getItems().setAll(
@@ -275,35 +283,39 @@ public class AdminController {
         );
     }
 
+
+
     private void cargarFormulario(Usuario usuario) {
 
-        txtNombre.setText(
-                valor(usuario.getNombre())
-        );
-
-        txtApellido.setText(
-                valor(usuario.getApellido())
-        );
-
-        txtCorreo.setText(
-                valor(usuario.getCorreo())
-        );
-
+        txtNombre.setText(valor(usuario.getNombre()));
+        txtApellido.setText(valor(usuario.getApellido()));
+        txtCorreo.setText(valor(usuario.getCorreo()));
         txtPassword.clear();
 
+        cbRol.setDisable(false);
         cbRol.setValue(null);
         cbDepartamento.setValue(null);
 
         if (usuario.getRol() != null) {
 
-            cbRol.getItems().stream()
-                    .filter(rol ->
-                            rol.getId().equals(
-                                    usuario.getRol().getId()
-                            )
-                    )
-                    .findFirst()
-                    .ifPresent(cbRol::setValue);
+            boolean esAdministrador =
+                    "ADMIN".equalsIgnoreCase(
+                            usuario.getRol().getNombre()
+                    );
+
+            if (esAdministrador) {
+                cbRol.setValue(usuario.getRol());
+                cbRol.setDisable(true);
+            } else {
+                cbRol.getItems().stream()
+                        .filter(rol ->
+                                rol.getId().equals(
+                                        usuario.getRol().getId()
+                                )
+                        )
+                        .findFirst()
+                        .ifPresent(cbRol::setValue);
+            }
         }
 
         if (usuario.getDepartamento() != null) {
@@ -318,6 +330,7 @@ public class AdminController {
                     .ifPresent(cbDepartamento::setValue);
         }
     }
+
 
     @FXML
     private void registrarUsuario() {
@@ -467,8 +480,11 @@ public class AdminController {
         txtPassword.clear();
 
         cbRol.setValue(null);
+        cbRol.setDisable(false);
+
         cbDepartamento.setValue(null);
     }
+
 
     private void mostrarError(Exception e) {
 
