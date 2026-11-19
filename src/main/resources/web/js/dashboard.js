@@ -937,13 +937,32 @@ document.addEventListener("DOMContentLoaded", () => {
         password.autocomplete = "new-password";
         password.minLength = 8;
 
+        // Solo se pueden registrar empleados y técnicos.
+        // El administrador existente conserva su rol al editar sus datos.
+        const rolActual = roles.find(opcion =>
+            String(opcion.id) === String(usuario?.rolId)
+        );
+
+        const esAdminActual = edicion &&
+            String(rolActual?.nombre ?? "").trim().toUpperCase() === "ADMIN";
+
+        const rolesDisponibles = esAdminActual
+            ? [rolActual]
+            : roles.filter(opcion =>
+                String(opcion.nombre ?? "").trim().toUpperCase() !== "ADMIN"
+            );
+
         const rol = selectorFormulario(
             formulario,
             "Rol",
             "rolId",
-            roles,
+            rolesDisponibles,
             usuario?.rolId
         );
+
+        if (esAdminActual) {
+            rol.disabled = true;
+        }
 
         const departamento = selectorFormulario(
             formulario,
