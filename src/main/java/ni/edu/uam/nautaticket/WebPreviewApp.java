@@ -73,7 +73,7 @@ public class WebPreviewApp extends Application {
         paginaDashboard = recursoDashboard.toExternalForm();
 
         WebView webView = new WebView();
-        webView.setContextMenuEnabled(false);
+        webView.setContextMenuEnabled(true);
 
         engine = webView.getEngine();
         engine.setJavaScriptEnabled(true);

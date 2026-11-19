@@ -82,17 +82,26 @@
                        wrapText="true"/>
 
                 <HBox spacing="10">
+
                     <Button text="Registrar"
                             onAction="#registrarUsuario"/>
 
                     <Button text="Actualizar"
                             onAction="#actualizarUsuario"/>
 
-                    <Button text="Desactivar"
+                    <Button fx:id="btnDesactivar"
+                            text="Desactivar"
+                            disable="true"
                             onAction="#desactivarUsuario"/>
+
+                    <Button fx:id="btnReactivar"
+                            text="Reactivar"
+                            disable="true"
+                            onAction="#reactivarUsuario"/>
 
                     <Button text="Limpiar"
                             onAction="#limpiarFormulario"/>
+
                 </HBox>
 
                 <TableView fx:id="tablaUsuarios"
@@ -100,18 +109,31 @@
                            prefHeight="350">
 
                     <columns>
+
                         <TableColumn fx:id="colId"
-                                     text="ID" prefWidth="55"/>
+                                     text="ID"
+                                     prefWidth="55"/>
+
                         <TableColumn fx:id="colNombre"
-                                     text="Nombre" prefWidth="170"/>
+                                     text="Nombre"
+                                     prefWidth="170"/>
+
                         <TableColumn fx:id="colCorreo"
-                                     text="Correo" prefWidth="230"/>
+                                     text="Correo"
+                                     prefWidth="230"/>
+
                         <TableColumn fx:id="colRol"
-                                     text="Rol" prefWidth="120"/>
+                                     text="Rol"
+                                     prefWidth="120"/>
+
                         <TableColumn fx:id="colDepartamento"
-                                     text="Departamento" prefWidth="160"/>
+                                     text="Departamento"
+                                     prefWidth="160"/>
+
                         <TableColumn fx:id="colEstado"
-                                     text="Estado" prefWidth="90"/>
+                                     text="Estado"
+                                     prefWidth="90"/>
+
                     </columns>
 
                 </TableView>
