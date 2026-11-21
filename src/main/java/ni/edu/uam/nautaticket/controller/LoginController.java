@@ -80,7 +80,7 @@ public class LoginController {
                     getClass().getResource("/ni/edu/uam/nautaticket/panel.fxml"));
             Parent root = loader.load();
             PanelController controller = loader.getController();
-            controller.iniciar(usuario, acceso.sesion());
+            controller.iniciar(usuario, acceso.sesion   ());
 
             Stage stage = (Stage) txtCorreo.getScene().getWindow();
             stage.setScene(new Scene(root));

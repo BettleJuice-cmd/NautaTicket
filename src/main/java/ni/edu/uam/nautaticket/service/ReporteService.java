@@ -8,6 +8,9 @@ import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+import net.sf.jasperreports.engine.export.HtmlExporter;
+import net.sf.jasperreports.export.SimpleExporterInput;
+import net.sf.jasperreports.export.SimpleHtmlExporterOutput;
 
 import ni.edu.uam.nautaticket.dao.ReporteDAO;
 import ni.edu.uam.nautaticket.dto.ReporteTicketDTO;
@@ -27,6 +30,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.io.StringWriter;
 
 public class ReporteService {
 
@@ -51,12 +55,16 @@ public class ReporteService {
             LocalDate fechaHasta,
             String estado,
             Path destino) {
-
         if (destino == null) {
-            throw new IllegalArgumentException(
-                    "Debe seleccionar una ubicación para el PDF."
-            );
+            throw new IllegalArgumentException("Debe seleccionar una ubicación para el PDF.");
         }
+        return guardarReporte(prepararReporte(fechaDesde, fechaHasta, estado), destino);
+    }
+
+    public JasperPrint prepararReporte(
+            LocalDate fechaDesde,
+            LocalDate fechaHasta,
+            String estado) {
 
         if (fechaDesde != null && fechaHasta != null
                 && fechaDesde.isAfter(fechaHasta)) {
@@ -121,6 +129,36 @@ public class ReporteService {
                             parametros,
                             datos
                     );
+
+            return documento;
+
+        } catch (JRException | IOException e) {
+            throw new IllegalStateException(
+                    "No se pudo preparar el reporte.", e
+            );
+        }
+    }
+
+    public static String crearVistaPrevia(JasperPrint documento) {
+        Objects.requireNonNull(documento);
+        try {
+            StringWriter html = new StringWriter();
+            HtmlExporter exportador = new HtmlExporter();
+            exportador.setExporterInput(new SimpleExporterInput(documento));
+            exportador.setExporterOutput(new SimpleHtmlExporterOutput(html));
+            exportador.exportReport();
+            return html.toString();
+        } catch (JRException e) {
+            throw new IllegalStateException("No se pudo mostrar la vista previa.", e);
+        }
+    }
+
+    public static Path guardarReporte(JasperPrint documento, Path destino) {
+        Objects.requireNonNull(documento);
+        if (destino == null) {
+            throw new IllegalArgumentException("Debe seleccionar una ubicación para el PDF.");
+        }
+        try {
 
             Path archivo = destino.toAbsolutePath().normalize();
 

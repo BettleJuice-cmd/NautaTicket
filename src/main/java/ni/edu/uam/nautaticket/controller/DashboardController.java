@@ -4,14 +4,13 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
 import javafx.stage.Window;
+import net.sf.jasperreports.engine.JasperPrint;
 
 import ni.edu.uam.nautaticket.dto.EstadisticaApiDTO;
 import ni.edu.uam.nautaticket.service.EstadisticasApiClient;
 import ni.edu.uam.nautaticket.service.HistorialService;
 
-import java.io.File;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -153,57 +152,38 @@ public class DashboardController {
 
         Window ventana = botonReporte.getScene().getWindow();
 
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Guardar reporte de tickets");
-        chooser.setInitialFileName("NautaTicket-reporte.pdf");
-        chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter(
-                        "Documento PDF (*.pdf)", "*.pdf"
-                )
-        );
-
-        File destino = chooser.showSaveDialog(ventana);
-
-        if (destino == null) return;
-
         final ReportePdfAction action = reportePdfAction;
 
-        Task<Void> tarea = new Task<>() {
+        Task<JasperPrint> tarea = new Task<>() {
             @Override
-            protected Void call() throws Exception {
-                action.generar(
-                        destino.toPath(),
-                        desde,
-                        hasta,
-                        estado
-                );
-                return null;
+            protected JasperPrint call() throws Exception {
+                return action.preparar(desde, hasta, estado);
             }
         };
 
         generandoReporte = true;
         botonReporte.setDisable(true);
-        mensajeReporte.setText("Generando reporte PDF...");
+        mensajeReporte.setText("Preparando vista previa...");
 
         tarea.setOnSucceeded(e -> {
-            generandoReporte = false;
-            botonReporte.setDisable(reportePdfAction == null);
-
-            mensajeReporte.setText(
-                    "Reporte guardado en: "
-                            + destino.getAbsolutePath()
-            );
-
-            Alert aviso = new Alert(
-                    Alert.AlertType.INFORMATION
-            );
-            aviso.setHeaderText(
-                    "Reporte generado correctamente"
-            );
-            aviso.setContentText(
-                    "Se guardó el archivo PDF en la ubicación seleccionada."
-            );
-            aviso.showAndWait();
+            try {
+                VistaPreviaReporte.mostrar(ventana, tarea.getValue(),
+                        () -> true,
+                        archivo -> {
+                            generandoReporte = false;
+                            botonReporte.setDisable(reportePdfAction == null);
+                            mensajeReporte.setText("Reporte guardado en: " + archivo);
+                        },
+                        () -> {
+                            generandoReporte = false;
+                            botonReporte.setDisable(reportePdfAction == null);
+                            mensajeReporte.setText("Vista previa cerrada.");
+                        });
+            } catch (RuntimeException error) {
+                generandoReporte = false;
+                botonReporte.setDisable(reportePdfAction == null);
+                mostrarErrorReporte("No se pudo mostrar la vista previa.");
+            }
         });
 
         tarea.setOnFailed(e -> {
@@ -214,12 +194,12 @@ public class DashboardController {
                     DashboardController.class.getName()
             ).log(
                     System.Logger.Level.ERROR,
-                    "Error al generar reporte PDF",
+                    "Error al preparar reporte",
                     tarea.getException()
             );
 
             mostrarErrorReporte(
-                    "No se pudo generar el PDF. Comprueba los filtros y la ubicación de destino."
+                    "No se pudo preparar el reporte. Comprueba los filtros y la conexión."
             );
         });
 

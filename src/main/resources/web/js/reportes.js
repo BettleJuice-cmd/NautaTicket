@@ -316,6 +316,38 @@
             margin-bottom: 0;
         }
 
+        .reporte-vista-previa {
+            margin-top: 18px;
+            border: 1px solid #40304d;
+            border-radius: 7px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .reporte-vista-cabecera {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            color: #e9e2fa;
+            background: #17121e;
+            border-bottom: 1px solid #40304d;
+            font-size: 12px;
+        }
+
+        .reporte-vista-cabecera button {
+            flex: 0 0 auto;
+        }
+
+        .reporte-vista-documento {
+            display: block;
+            width: 100%;
+            height: 640px;
+            border: 0;
+            background: #ffffff;
+        }
+
         @media (max-width: 850px) {
             .reporte-grid {
                 grid-template-columns: 1fr;
@@ -440,7 +472,7 @@
                 <button id="reporteGenerar"
                         class="button button-primary"
                         type="submit">
-                    Generar PDF
+                    Generar vista previa
                 </button>
 
                 <button id="reporteLimpiar"
@@ -459,21 +491,33 @@
         <div class="reporte-informacion">
             <h2>Contenido del reporte</h2>
 
-            <p>
+            <p id="reporteDescripcion">
                 El PDF se genera mediante JasperReports
                 utilizando los registros de PostgreSQL.
             </p>
 
-            <p>
+            <p id="reportePermisos">
                 El documento contiene los tickets que
                 cumplen los filtros seleccionados,
                 de acuerdo con los permisos del usuario.
             </p>
 
-            <p>
-                Al pulsar Generar PDF, Windows solicitará
-                la ubicación donde guardar el documento.
-            </p>
+            <div id="reporteVistaPrevia"
+                 class="reporte-vista-previa"
+                 hidden>
+                <div class="reporte-vista-cabecera">
+                    <span>Vista previa generada con los filtros seleccionados</span>
+                    <button id="reporteGuardar"
+                            class="button button-primary"
+                            type="button">
+                        Guardar PDF
+                    </button>
+                </div>
+                <iframe id="reporteVistaDocumento"
+                        class="reporte-vista-documento"
+                        title="Vista previa del reporte"
+                        sandbox></iframe>
+            </div>
         </div>
     `;
 
@@ -485,6 +529,9 @@
     const generarBtn = $("reporteGenerar");
     const limpiarBtn = $("reporteLimpiar");
     const mensajeElemento = $("reporteMensaje");
+    const vistaPrevia = $("reporteVistaPrevia");
+    const vistaDocumento = $("reporteVistaDocumento");
+    const guardarBtn = $("reporteGuardar");
 
     const botonesFecha = {
         desde: $("reporteDesdeBoton"),
@@ -754,7 +801,7 @@
 
         generarBtn.textContent = bloqueado
             ? "Generando reporte..."
-            : "Generar PDF";
+            : "Generar vista previa";
 
         if (bloqueado) {
             cerrarCalendario();
@@ -803,6 +850,14 @@
             return;
         }
 
+        if (resultado.correcto && resultado.vistaPrevia) {
+            vistaDocumento.srcdoc = resultado.vistaPrevia;
+            vistaPrevia.hidden = false;
+            guardarBtn.disabled = false;
+        }
+
+        guardarBtn.disabled = false;
+
         mostrarMensaje(
             resultado.mensaje ||
             "No se recibió información del reporte.",
@@ -810,6 +865,20 @@
             resultado.correcto ? resultado.archivo : ""
         );
     };
+
+    guardarBtn.addEventListener("click", () => {
+        if (procesando) return;
+
+        guardarBtn.disabled = true;
+        mostrarMensaje("Selecciona la ubicación donde guardar el PDF.");
+
+        try {
+            puente.guardarReporte();
+        } catch (error) {
+            guardarBtn.disabled = false;
+            mostrarMensaje("No se pudo iniciar el guardado del PDF.", true);
+        }
+    });
 
     botonesFecha.desde.addEventListener("click", () => {
         abrirCalendario("desde");
@@ -855,6 +924,9 @@
         cerrarCalendario();
 
         mensajeElemento.hidden = true;
+        vistaPrevia.hidden = true;
+        vistaDocumento.srcdoc = "";
+        guardarBtn.disabled = false;
     });
 
     actualizarCampo("desde");

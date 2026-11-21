@@ -3,17 +3,15 @@ package ni.edu.uam.nautaticket.bridge;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.concurrent.Task;
 import javafx.scene.web.WebEngine;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import ni.edu.uam.nautaticket.model.Usuario;
 import ni.edu.uam.nautaticket.service.ReporteService;
+import net.sf.jasperreports.engine.JasperPrint;
 import ni.edu.uam.nautaticket.util.HibernateUtil;
 
 import org.hibernate.SessionFactory;
 
-import java.io.File;
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -46,6 +44,7 @@ public class WebReporteBridge {
             new AtomicBoolean(true);
 
     private boolean procesando;
+    private JasperPrint reporteEnVista;
 
     public WebReporteBridge(
             WebEngine engine,
@@ -70,6 +69,7 @@ public class WebReporteBridge {
 
     public void desactivar() {
         activo.set(false);
+        reporteEnVista = null;
     }
 
     public void generarReporte(
@@ -86,6 +86,7 @@ public class WebReporteBridge {
             enviarResultado(
                     false,
                     "Hay un reporte en proceso.",
+                    "",
                     ""
             );
             return;
@@ -110,48 +111,15 @@ public class WebReporteBridge {
             }
 
         } catch (IllegalArgumentException e) {
-            enviarResultado(false, e.getMessage(), "");
-            return;
-        }
-
-        // La ubicación se selecciona desde Windows,
-        // no se recibe una ruta arbitraria de JavaScript.
-        FileChooser selector = new FileChooser();
-
-        selector.setTitle("Guardar reporte de NautaTicket");
-
-        selector.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter(
-                        "Documento PDF (*.pdf)",
-                        "*.pdf"
-                )
-        );
-
-        selector.setInitialFileName(
-                "NautaTicket_Reporte_Tickets.pdf"
-        );
-
-        File destino = selector.showSaveDialog(
-                ventanaPrincipal
-        );
-
-        if (destino == null) {
-            enviarResultado(
-                    false,
-                    "Se canceló la generación del reporte.",
-                    ""
-            );
+            enviarResultado(false, e.getMessage(), "", "");
             return;
         }
 
         procesando = true;
-
-        final Path rutaDestino = destino.toPath();
-
-        Task<Path> tarea = new Task<>() {
+        Task<JasperPrint> tarea = new Task<>() {
 
             @Override
-            protected Path call() {
+            protected JasperPrint call() {
 
                 if (!activo.get()) {
                     throw new SecurityException(
@@ -165,26 +133,37 @@ public class WebReporteBridge {
                                 usuarioId
                         );
 
-                return servicio.generarReporte(
+                return servicio.prepararReporte(
                         fechaDesde,
                         fechaHasta,
-                        estadoFiltro,
-                        rutaDestino
+                        estadoFiltro
                 );
             }
         };
 
         tarea.setOnSucceeded(evento -> {
 
-            procesando = false;
+            if (!paginaAutorizada()) {
+                procesando = false;
+                return;
+            }
+            try {
+                JasperPrint documento = tarea.getValue();
+                String vistaPrevia = ReporteService.crearVistaPrevia(documento);
 
-            Path archivo = tarea.getValue();
-
-            enviarResultado(
-                    true,
-                    "Reporte generado correctamente.",
-                    archivo.toString()
-            );
+                reporteEnVista = documento;
+                procesando = false;
+                enviarResultado(
+                        true,
+                        "Vista previa lista. Revisa el contenido y guarda el PDF cuando estés conforme.",
+                        "",
+                        vistaPrevia
+                );
+            } catch (RuntimeException error) {
+                procesando = false;
+                LOG.log(Level.SEVERE, "Error preparando vista previa", error);
+                enviarResultado(false, "No se pudo preparar la vista previa.", "", "");
+            }
         });
 
         tarea.setOnFailed(evento -> {
@@ -205,7 +184,7 @@ public class WebReporteBridge {
                             ? error.getMessage()
                             : "No se pudo generar el reporte PDF.";
 
-            enviarResultado(false, mensaje, "");
+            enviarResultado(false, mensaje, "", "");
         });
 
         Thread hilo = new Thread(
@@ -262,10 +241,81 @@ public class WebReporteBridge {
                 );
     }
 
+    public void guardarReporte() {
+        if (!paginaAutorizada() || procesando) {
+            return;
+        }
+
+        if (reporteEnVista == null) {
+            enviarResultado(
+                    false,
+                    "Primero genera una vista previa del reporte.",
+                    "",
+                    ""
+            );
+            return;
+        }
+
+        javafx.stage.FileChooser selector = new javafx.stage.FileChooser();
+        selector.setTitle("Guardar reporte de tickets");
+        selector.setInitialFileName("NautaTicket_Reporte_Tickets.pdf");
+        selector.getExtensionFilters().add(
+                new javafx.stage.FileChooser.ExtensionFilter(
+                        "Documento PDF (*.pdf)", "*.pdf"
+                )
+        );
+
+        java.io.File destino = selector.showSaveDialog(ventanaPrincipal);
+        if (destino == null) {
+            enviarResultado(false, "No se seleccionó una ubicación para el PDF.", "", "");
+            return;
+        }
+
+        JasperPrint documento = reporteEnVista;
+        procesando = true;
+        Task<java.nio.file.Path> tarea = new Task<>() {
+            @Override
+            protected java.nio.file.Path call() {
+                if (!activo.get()) {
+                    throw new SecurityException("La sesión ya no está disponible.");
+                }
+                return ReporteService.guardarReporte(documento, destino.toPath());
+            }
+        };
+
+        tarea.setOnSucceeded(evento -> {
+            procesando = false;
+            enviarResultado(
+                    true,
+                    "Reporte guardado correctamente.",
+                    tarea.getValue().toString(),
+                    ""
+            );
+        });
+        tarea.setOnFailed(evento -> {
+            procesando = false;
+            Throwable error = tarea.getException();
+            LOG.log(Level.SEVERE, "Error guardando PDF", error);
+            enviarResultado(
+                    false,
+                    error == null || error.getMessage() == null
+                            ? "No se pudo guardar el reporte PDF."
+                            : error.getMessage(),
+                    "",
+                    ""
+            );
+        });
+
+        Thread hilo = new Thread(tarea, "nautaticket-guardar-pdf");
+        hilo.setDaemon(true);
+        hilo.start();
+    }
+
     private void enviarResultado(
             boolean correcto,
             String mensaje,
-            String archivo
+            String archivo,
+            String vistaPrevia
     ) {
 
         if (!paginaAutorizada()) {
@@ -278,6 +328,7 @@ public class WebReporteBridge {
         respuesta.put("correcto", correcto);
         respuesta.put("mensaje", mensaje);
         respuesta.put("archivo", archivo);
+        respuesta.put("vistaPrevia", vistaPrevia);
 
         try {
 
