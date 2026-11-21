@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.web.WebView?>
 
 <VBox xmlns="http://javafx.com/javafx/21"
       xmlns:fx="http://javafx.com/fxml/1"
@@ -42,10 +43,10 @@
                 onAction="#limpiar"/>
 
         <Button fx:id="botonReporte"
-                text="Generar reporte PDF"
+                text="Generar vista previa"
                 onAction="#generarReportePdf"
                 disable="true"
-                accessibleText="Guardar reporte PDF con los filtros seleccionados"/>
+                accessibleText="Generar la vista previa del reporte con los filtros seleccionados"/>
 
         <Button fx:id="botonApi"
                 text="Consultar API REST"
@@ -91,5 +92,32 @@
         </VBox>
 
     </HBox>
+
+    <VBox fx:id="panelVistaReporte"
+          spacing="10"
+          visible="false"
+          managed="false"
+          style="-fx-padding: 16; -fx-border-color: #b8b8b8; -fx-border-radius: 6; -fx-background-color: #fafafa;">
+
+        <Label text="Vista previa del informe"
+               style="-fx-font-size: 17px; -fx-font-weight: bold;"/>
+
+        <Label text="Este contenido corresponde a los filtros seleccionados. Puedes guardarlo como PDF o cerrar la vista previa." 
+               wrapText="true"/>
+
+        <HBox spacing="10">
+            <Button fx:id="botonGuardarReporte"
+                    text="Guardar PDF"
+                    onAction="#guardarReportePdf"
+                    disable="true"/>
+
+            <Button text="Cerrar vista previa"
+                    onAction="#cerrarVistaPrevia"/>
+        </HBox>
+
+        <WebView fx:id="vistaReporte"
+                 prefHeight="560.0"
+                 minHeight="420.0"/>
+    </VBox>
 
 </VBox>

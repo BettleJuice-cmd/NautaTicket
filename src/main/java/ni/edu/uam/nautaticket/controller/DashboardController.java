@@ -4,13 +4,18 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import net.sf.jasperreports.engine.JasperPrint;
 
 import ni.edu.uam.nautaticket.dto.EstadisticaApiDTO;
 import ni.edu.uam.nautaticket.service.EstadisticasApiClient;
 import ni.edu.uam.nautaticket.service.HistorialService;
+import ni.edu.uam.nautaticket.service.ReporteService;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +34,9 @@ public class DashboardController {
 
     @FXML private Button botonReporte;
     @FXML private Label mensajeReporte;
+    @FXML private VBox panelVistaReporte;
+    @FXML private WebView vistaReporte;
+    @FXML private Button botonGuardarReporte;
 
     @FXML private Button botonApi;
 
@@ -40,6 +48,7 @@ public class DashboardController {
 
     private boolean generandoReporte;
     private boolean consultandoApi;
+    private JasperPrint reporteEnVista;
 
     @FXML
     private void initialize() {
@@ -61,6 +70,8 @@ public class DashboardController {
         botonApi.setVisible(false);
         botonApi.setManaged(false);
         botonApi.setDisable(true);
+
+        ocultarVistaPrevia();
     }
 
     public void setHistorialService(
@@ -150,8 +161,6 @@ public class DashboardController {
                         ? null
                         : filtroEstado.getValue();
 
-        Window ventana = botonReporte.getScene().getWindow();
-
         final ReportePdfAction action = reportePdfAction;
 
         Task<JasperPrint> tarea = new Task<>() {
@@ -167,18 +176,19 @@ public class DashboardController {
 
         tarea.setOnSucceeded(e -> {
             try {
-                VistaPreviaReporte.mostrar(ventana, tarea.getValue(),
-                        () -> true,
-                        archivo -> {
-                            generandoReporte = false;
-                            botonReporte.setDisable(reportePdfAction == null);
-                            mensajeReporte.setText("Reporte guardado en: " + archivo);
-                        },
-                        () -> {
-                            generandoReporte = false;
-                            botonReporte.setDisable(reportePdfAction == null);
-                            mensajeReporte.setText("Vista previa cerrada.");
-                        });
+                reporteEnVista = tarea.getValue();
+                vistaReporte.getEngine().loadContent(
+                        ReporteService.crearVistaPrevia(reporteEnVista),
+                        "text/html"
+                );
+                panelVistaReporte.setVisible(true);
+                panelVistaReporte.setManaged(true);
+                botonGuardarReporte.setDisable(false);
+                generandoReporte = false;
+                botonReporte.setDisable(reportePdfAction == null);
+                mensajeReporte.setText(
+                        "Vista previa lista. Revisa el informe y guarda el PDF cuando estés conforme."
+                );
             } catch (RuntimeException error) {
                 generandoReporte = false;
                 botonReporte.setDisable(reportePdfAction == null);
@@ -210,6 +220,82 @@ public class DashboardController {
 
         hilo.setDaemon(true);
         hilo.start();
+    }
+
+    @FXML
+    private void guardarReportePdf() {
+        if (reporteEnVista == null || generandoReporte) {
+            return;
+        }
+
+        FileChooser selector = new FileChooser();
+        selector.setTitle("Guardar reporte de tickets");
+        selector.setInitialFileName("NautaTicket_Reporte_Tickets.pdf");
+        selector.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter(
+                        "Documento PDF (*.pdf)", "*.pdf"
+                )
+        );
+
+        Window ventana = botonGuardarReporte.getScene().getWindow();
+        File destino = selector.showSaveDialog(ventana);
+        if (destino == null) {
+            mensajeReporte.setText("No se seleccionó una ubicación para el PDF.");
+            return;
+        }
+
+        JasperPrint documento = reporteEnVista;
+        Task<Path> tarea = new Task<>() {
+            @Override
+            protected Path call() {
+                return ReporteService.guardarReporte(
+                        documento,
+                        destino.toPath()
+                );
+            }
+        };
+
+        generandoReporte = true;
+        botonReporte.setDisable(true);
+        botonGuardarReporte.setDisable(true);
+        mensajeReporte.setText("Guardando PDF...");
+
+        tarea.setOnSucceeded(e -> {
+            generandoReporte = false;
+            botonReporte.setDisable(reportePdfAction == null);
+            botonGuardarReporte.setDisable(false);
+            mensajeReporte.setText(
+                    "Reporte guardado en: " + tarea.getValue()
+            );
+        });
+
+        tarea.setOnFailed(e -> {
+            generandoReporte = false;
+            botonReporte.setDisable(reportePdfAction == null);
+            botonGuardarReporte.setDisable(false);
+            mostrarErrorReporte("No se pudo guardar el reporte PDF.");
+        });
+
+        Thread hilo = new Thread(tarea, "nautaticket-guardar-pdf");
+        hilo.setDaemon(true);
+        hilo.start();
+    }
+
+    @FXML
+    private void cerrarVistaPrevia() {
+        ocultarVistaPrevia();
+        mensajeReporte.setText("Vista previa cerrada.");
+    }
+
+    private void ocultarVistaPrevia() {
+        reporteEnVista = null;
+        if (vistaReporte != null) {
+            vistaReporte.getEngine().loadContent("");
+        }
+        if (panelVistaReporte != null) {
+            panelVistaReporte.setVisible(false);
+            panelVistaReporte.setManaged(false);
+        }
     }
 
     private void mostrarErrorReporte(String texto) {
@@ -399,6 +485,7 @@ public class DashboardController {
         fechaDesde.setValue(null);
         fechaHasta.setValue(null);
         filtroEstado.setValue("TODOS");
+        ocultarVistaPrevia();
         actualizar();
     }
 }
