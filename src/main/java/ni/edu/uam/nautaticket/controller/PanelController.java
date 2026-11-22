@@ -295,6 +295,11 @@ public class PanelController {
                         )
                 );
 
+                if (administrador) {
+                    dashboard.setTiemposResolucion(
+                            HibernateUtil.getSessionFactory(), usuario.getId());
+                }
+
 
                 dashboard.setReportePdfAction(
                         (desde, hasta, estado) -> {

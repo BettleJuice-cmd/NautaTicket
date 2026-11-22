@@ -4,6 +4,12 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
+import javafx.scene.control.Tooltip;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
@@ -13,6 +19,8 @@ import ni.edu.uam.nautaticket.dto.EstadisticaApiDTO;
 import ni.edu.uam.nautaticket.service.EstadisticasApiClient;
 import ni.edu.uam.nautaticket.service.HistorialService;
 import ni.edu.uam.nautaticket.service.ReporteService;
+import ni.edu.uam.nautaticket.service.TiempoResolucionService;
+import org.hibernate.SessionFactory;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -49,6 +57,12 @@ public class DashboardController {
     private boolean generandoReporte;
     private boolean consultandoApi;
     private JasperPrint reporteEnVista;
+    private TiempoResolucionService tiempoService;
+    private BarChart<String, Number> graficoEstados;
+    private BarChart<String, Number> graficoPromedio;
+
+    private record DatosGraficos(Map<String, Long> estados,
+            List<TiempoResolucionService.ResumenTecnico> tecnicos) { }
 
     @FXML
     private void initialize() {
@@ -81,6 +95,106 @@ public class DashboardController {
         actualizar();
     }
 
+    public void setTiemposResolucion(SessionFactory sessionFactory, int administradorId) {
+        tiempoService = new TiempoResolucionService(sessionFactory, administradorId);
+        HBox metricas = (HBox) pendientes.getParent().getParent();
+        VBox raiz = (VBox) metricas.getParent();
+        graficoEstados = crearGrafico("Tickets por estado", "Tickets");
+        graficoPromedio = crearGrafico("Promedio de resolución por técnico", "Horas");
+        int indice = raiz.getChildren().indexOf(metricas) + 1;
+        raiz.getChildren().add(indice, graficoEstados);
+        raiz.getChildren().add(indice + 1, graficoPromedio);
+        actualizarTiempos();
+    }
+
+    private BarChart<String, Number> crearGrafico(String titulo, String unidad) {
+        CategoryAxis categorias = new CategoryAxis();
+        NumberAxis horas = new NumberAxis();
+        horas.setLabel(unidad);
+        BarChart<String, Number> grafico = new BarChart<>(categorias, horas);
+        grafico.setTitle(titulo);
+        grafico.setLegendVisible(false);
+        grafico.setAnimated(false);
+        grafico.setPrefHeight(250);
+        grafico.setCategoryGap(12);
+        return grafico;
+    }
+
+    private void actualizarTiempos() {
+        if (tiempoService == null) return;
+        Task<DatosGraficos> tarea = new Task<>() {
+            @Override protected DatosGraficos call() {
+                return new DatosGraficos(
+                        historialService.totales(null, null, null),
+                        tiempoService.resumen());
+            }
+        };
+        tarea.setOnSucceeded(evento -> {
+            llenarEstados(tarea.getValue().estados());
+            llenarPromedios(tarea.getValue().tecnicos());
+        });
+        tarea.setOnFailed(evento -> mensajeReporte.setText(
+                "No se pudieron cargar los gráficos."));
+        Thread hilo = new Thread(tarea, "nautaticket-tiempos-dashboard");
+        hilo.setDaemon(true);
+        hilo.start();
+    }
+
+    private void llenarEstados(Map<String, Long> totales) {
+        XYChart.Series<String, Number> serie = new XYChart.Series<>();
+        String[][] estados = {
+                {"PENDIENTE", "Pendiente", "#d9a441"},
+                {"EN_PROCESO", "En proceso", "#5d91d6"},
+                {"RESUELTO", "Resuelto", "#37b978"},
+                {"CERRADO", "Cerrado", "#8792a1"}
+        };
+        for (String[] estado : estados) {
+            long total = totales.getOrDefault(estado[0], 0L);
+            XYChart.Data<String, Number> barra = new XYChart.Data<>(estado[1], total);
+            barra.nodeProperty().addListener((obs, anterior, nodo) -> {
+                if (nodo != null) {
+                    nodo.setStyle("-fx-bar-fill: " + estado[2] + ";");
+                    Tooltip.install(nodo, new Tooltip(total + " tickets"));
+                }
+            });
+            serie.getData().add(barra);
+        }
+        graficoEstados.getData().setAll(serie);
+    }
+
+    private void llenarPromedios(List<TiempoResolucionService.ResumenTecnico> datos) {
+        XYChart.Series<String, Number> serie = new XYChart.Series<>();
+        double menorTiempo = datos.stream()
+                .mapToDouble(TiempoResolucionService.ResumenTecnico::promedioSegundos)
+                .min().orElse(0);
+        double mayorTiempo = datos.stream()
+                .mapToDouble(TiempoResolucionService.ResumenTecnico::promedioSegundos)
+                .max().orElse(0);
+        for (var tecnico : datos) {
+            double segundos = tecnico.promedioSegundos();
+            XYChart.Data<String, Number> barra = new XYChart.Data<>(
+                    tecnico.nombre() + " (#" + tecnico.id() + ")", segundos / 3600.0);
+            serie.getData().add(barra);
+            barra.nodeProperty().addListener((obs, anterior, nodo) -> {
+                if (nodo != null) {
+                    Tooltip.install(nodo, new Tooltip(
+                            TiempoResolucionService.formatear(Math.round(segundos))
+                                    + " · " + tecnico.ticketsResueltos() + " tickets"));
+                    if (menorTiempo < mayorTiempo) {
+                        if (Double.compare(segundos, menorTiempo) == 0) {
+                            nodo.setStyle("-fx-bar-fill: #37b978;");
+                        } else if (Double.compare(segundos, mayorTiempo) == 0) {
+                            nodo.setStyle("-fx-bar-fill: #df6674;");
+                        }
+                    }
+                }
+            });
+        }
+        graficoPromedio.getData().setAll(serie);
+        graficoPromedio.setTitle("Promedio de resolución por técnico"
+                + (datos.isEmpty() ? " · Sin datos" : ""));
+    }
+
     @FXML
     private void actualizar() {
         if (historialService == null) return;
@@ -109,6 +223,7 @@ public class DashboardController {
             cerrados.setText(String.valueOf(
                     totales.getOrDefault("CERRADO", 0L)
             ));
+            actualizarTiempos();
 
         } catch (RuntimeException ex) {
             Alert alerta = new Alert(Alert.AlertType.ERROR);

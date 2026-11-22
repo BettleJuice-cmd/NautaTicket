@@ -304,6 +304,8 @@ public class WebAtencionBridge {
             fila.put("id", ticket.idTicket());
             fila.put("titulo", ticket.titulo());
             fila.put("estado", ticket.estado());
+            fila.put("fechaAsignacion", ticket.fechaAsignacion() == null
+                    ? null : ticket.fechaAsignacion().toString());
 
             fila.put(
                     "fecha",

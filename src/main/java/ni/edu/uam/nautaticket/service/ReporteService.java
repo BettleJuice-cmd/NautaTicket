@@ -16,6 +16,7 @@ import ni.edu.uam.nautaticket.dao.ReporteDAO;
 import ni.edu.uam.nautaticket.dto.ReporteTicketDTO;
 
 import org.hibernate.SessionFactory;
+import org.hibernate.Session;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,6 +39,7 @@ public class ReporteService {
             "/reports/reporte_tickets.jrxml";
 
     private final ReporteDAO reporteDAO;
+    private final SessionFactory sessionFactory;
     private final int usuarioId;
 
     public ReporteService(SessionFactory sessionFactory, int usuarioId) {
@@ -47,6 +49,7 @@ public class ReporteService {
         this.reporteDAO = new ReporteDAO(
                 Objects.requireNonNull(sessionFactory)
         );
+        this.sessionFactory = sessionFactory;
         this.usuarioId = usuarioId;
     }
 
@@ -130,12 +133,31 @@ public class ReporteService {
                             datos
                     );
 
+            if (esAdministrador()) {
+                ReporteGraficosTecnicos.agregar(documento,
+                        new TiempoResolucionService(sessionFactory, usuarioId).resumen(),
+                        new HistorialService(sessionFactory, usuarioId)
+                                .totales(null, null, null));
+            }
+
             return documento;
 
         } catch (JRException | IOException e) {
             throw new IllegalStateException(
                     "No se pudo preparar el reporte.", e
             );
+        }
+    }
+
+    private boolean esAdministrador() {
+        try (Session session = sessionFactory.openSession()) {
+            String rol = session.createSelectionQuery("""
+                    SELECT r.nombre FROM Usuario u JOIN u.rol r
+                    WHERE u.id = :usuario AND u.activo = true
+                    """, String.class)
+                    .setParameter("usuario", usuarioId)
+                    .uniqueResult();
+            return "ADMIN".equals(rol);
         }
     }
 

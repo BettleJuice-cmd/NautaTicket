@@ -15,12 +15,16 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
 import ni.edu.uam.nautaticket.dao.AsignacionTicketDao.TicketFila;
 import ni.edu.uam.nautaticket.service.AtencionService;
 
 import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import ni.edu.uam.nautaticket.service.TiempoResolucionService;
 import java.util.List;
 
 public class AtencionController {
@@ -65,6 +69,8 @@ public class AtencionController {
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private Timeline actualizacionAutomatica;
+    private Timeline reloj;
+    private final Label tiempoSeleccionado = new Label("Selecciona un ticket asignado para ver su tiempo.");
 
     private record Resultado(
             List<TicketFila> pendientes,
@@ -141,6 +147,19 @@ public class AtencionController {
                 "Mis tickets activos: -- / "
                         + AtencionService.MAX_TICKETS_ACTIVOS
         );
+
+        tiempoSeleccionado.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #285578;");
+        VBox contenedor = (VBox) tablaMisTickets.getParent();
+        contenedor.getChildren().add(contenedor.getChildren().indexOf(tablaMisTickets) + 1,
+                tiempoSeleccionado);
+        tablaMisTickets.getSelectionModel().selectedItemProperty().addListener(
+                (observable, anterior, actual) -> actualizarTiempo());
+        reloj = new Timeline(new KeyFrame(Duration.seconds(1), evento -> actualizarTiempo()));
+        reloj.setCycleCount(Animation.INDEFINITE);
+        tablaMisTickets.sceneProperty().addListener((observable, anterior, actual) -> {
+            if (actual == null) reloj.stop();
+            else reloj.play();
+        });
 
         configurarActualizacionAutomatica();
     }
@@ -446,6 +465,7 @@ public class AtencionController {
                     tablaMisTickets,
                     mioSeleccionado
             );
+            actualizarTiempo();
 
             actualizarCapacidad(resultado.activos());
 
@@ -577,6 +597,18 @@ public class AtencionController {
                 return;
             }
         }
+    }
+
+    private void actualizarTiempo() {
+        TicketFila fila = tablaMisTickets.getSelectionModel().getSelectedItem();
+        if (fila == null || fila.fechaAsignacion() == null) {
+            tiempoSeleccionado.setText("Selecciona un ticket asignado para ver su tiempo.");
+            return;
+        }
+        long segundos = Math.max(0, ChronoUnit.SECONDS.between(
+                fila.fechaAsignacion(), LocalDateTime.now()));
+        tiempoSeleccionado.setText("Ticket #" + fila.idTicket() + " · Tiempo transcurrido: "
+                + TiempoResolucionService.formatear(segundos));
     }
 
     private void actualizarCapacidad(int activos) {

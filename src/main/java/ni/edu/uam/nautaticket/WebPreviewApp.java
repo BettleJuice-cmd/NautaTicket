@@ -15,6 +15,8 @@ import ni.edu.uam.nautaticket.bridge.WebAtencionBridge;
 import ni.edu.uam.nautaticket.bridge.WebDashboardBridge;
 import ni.edu.uam.nautaticket.bridge.WebEstadisticasBridge;
 import ni.edu.uam.nautaticket.bridge.WebHistorialBridge;
+import ni.edu.uam.nautaticket.bridge.WebTiempoBridge;
+import ni.edu.uam.nautaticket.bridge.WebTiempoVisual;
 import ni.edu.uam.nautaticket.bridge.WebLoginBridge;
 import ni.edu.uam.nautaticket.bridge.WebReporteBridge;
 import ni.edu.uam.nautaticket.bridge.WebTicketBridge;
@@ -41,6 +43,7 @@ public class WebPreviewApp extends Application {
 
     private WebLoginBridge loginBridge;
     private WebDashboardBridge dashboardBridge;
+    private WebTiempoBridge tiempoBridge;
     private WebAdminBridge adminBridge;
     private WebTicketBridge ticketBridge;
     private WebAtencionBridge atencionBridge;
@@ -247,6 +250,10 @@ public class WebPreviewApp extends Application {
 
             if (esAdministrador()) {
 
+                tiempoBridge = new WebTiempoBridge(
+                        engine, direccion, usuarioAutenticado.getId());
+                ventana.setMember("nautaTiempoBridge", tiempoBridge);
+
                 adminBridge = new WebAdminBridge(
                         engine,
                         direccion,
@@ -350,6 +357,7 @@ public class WebPreviewApp extends Application {
                         "/web/js/atencion.js",
                         "js/atencion.js"
                 );
+                engine.executeScript(WebTiempoVisual.RELOJ_TECNICO);
             }
 
             if (esAdministrador() || esTecnico()) {
@@ -371,6 +379,7 @@ public class WebPreviewApp extends Application {
                         "/web/js/estadisticas.js",
                         "js/estadisticas.js"
                 );
+                engine.executeScript(WebTiempoVisual.GRAFICOS_ADMIN);
             }
 
             LOGGER.info(
@@ -456,6 +465,11 @@ public class WebPreviewApp extends Application {
     }
 
     private void desactivarPuentes() {
+
+        if (tiempoBridge != null) {
+            tiempoBridge.desactivar();
+            tiempoBridge = null;
+        }
 
         if (adminBridge != null) {
             adminBridge.desactivar();

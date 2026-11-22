@@ -16,7 +16,8 @@ public class AsignacionTicketDao {
             int idTicket,
             String titulo,
             LocalDateTime fechaCreacion,
-            String estado
+            String estado,
+            LocalDateTime fechaAsignacion
     ) {}
 
     public AsignacionTicketDao() {
@@ -30,7 +31,7 @@ public class AsignacionTicketDao {
     public List<TicketFila> listarPendientes() {
         String sql = """
                 SELECT t.id_ticket, t.titulo,
-                       t.fecha_creacion, e.nombre
+                       t.fecha_creacion, e.nombre, t.fecha_asignacion
                 FROM tickets t
                 JOIN estados_ticket e
                   ON e.id_estado = t.id_estado
@@ -57,7 +58,7 @@ public class AsignacionTicketDao {
     public List<TicketFila> listarMisTickets(int idTecnico) {
         String sql = """
                 SELECT t.id_ticket, t.titulo,
-                       t.fecha_creacion, e.nombre
+                       t.fecha_creacion, e.nombre, t.fecha_asignacion
                 FROM tickets t
                 JOIN estados_ticket e
                   ON e.id_estado = t.id_estado
@@ -143,7 +144,11 @@ public class AsignacionTicketDao {
                 ((Number) fila[0]).intValue(),
                 (String) fila[1],
                 fecha,
-                (String) fila[3]
+                (String) fila[3],
+                fila[4] == null ? null
+                        : fila[4] instanceof LocalDateTime fechaLocal
+                        ? fechaLocal
+                        : ((Timestamp) fila[4]).toLocalDateTime()
         );
     }
 }
