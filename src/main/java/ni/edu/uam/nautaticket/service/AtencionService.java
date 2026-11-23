@@ -303,15 +303,15 @@ public class AtencionService {
                 );
             }
 
-            Number duracion = session.createNativeQuery("""
-                    SELECT GREATEST(0, EXTRACT(EPOCH FROM
-                        (fecha_fin - fecha_asignacion)))
+            Long duracion = session.createNativeQuery("""
+                    SELECT CAST(GREATEST(0, FLOOR(EXTRACT(EPOCH FROM
+                        (fecha_fin - fecha_asignacion)))) AS bigint)
                     FROM asignaciones_ticket
                     WHERE id_ticket = :ticket
                       AND id_tecnico = :tecnico
                     ORDER BY fecha_fin DESC, id_asignacion DESC
                     LIMIT 1
-                    """, Number.class)
+                    """, Long.class)
                     .setParameter("ticket", idTicket)
                     .setParameter("tecnico", idTecnico)
                     .getSingleResult();
@@ -326,7 +326,7 @@ public class AtencionService {
                     "EN_PROCESO",
                     "RESUELTO",
                     "Tiempo de resolución: "
-                            + TiempoResolucionService.formatear(duracion.longValue())
+                            + TiempoResolucionService.formatear(duracion)
                             + ". Ticket resuelto: " + solucionRegistrada
             );
         });

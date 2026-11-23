@@ -8,6 +8,14 @@
         return;
     }
 
+    // JavaFX WebView no ofrece un selector de fecha nativo confiable.
+    // Utilizamos el mismo tipo de calendario HTML que la sección Reportes.
+    const meses = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ];
+    const diasSemana = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"];
+
     const estilos = document.createElement("style");
 
     estilos.textContent = `
@@ -48,6 +56,161 @@
             color-scheme: dark;
             font: 12px "IBM Plex Sans", "Segoe UI", sans-serif;
         }
+
+        .historial-fecha-contenedor {
+            position: relative;
+            min-width: 0;
+        }
+
+        .historial-fecha-boton {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+            min-height: 42px;
+            padding: 10px 12px;
+            color: #f2f2f4;
+            background: #080808;
+            border: 1px solid #353535;
+            border-radius: 6px;
+            font: 12px "IBM Plex Sans", "Segoe UI", sans-serif;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .historial-fecha-boton:hover,
+        .historial-fecha-boton:focus,
+        .historial-fecha-boton[aria-expanded="true"] {
+            border-color: #9783db;
+            background: #111018;
+            outline: none;
+        }
+
+        .historial-fecha-boton:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+        }
+
+        .historial-fecha-boton svg {
+            width: 17px;
+            height: 17px;
+            flex-shrink: 0;
+            fill: none;
+            stroke: #a99ad8;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .historial-fecha-vacia { color: #92929a; }
+
+        .historial-calendario {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            z-index: 150;
+            width: 305px;
+            max-width: 85vw;
+            box-sizing: border-box;
+            padding: 16px;
+            background: #161616;
+            color: #f2f2f4;
+            border: 1px solid #45404f;
+            border-radius: 9px;
+            box-shadow: 0 14px 38px rgba(0,0,0,.65);
+        }
+
+        .historial-calendario[hidden] { display: none !important; }
+
+        .historial-calendario-cabecera {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .historial-calendario-cabecera strong {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .historial-calendario-nav {
+            width: 32px;
+            height: 32px;
+            color: #d7c9f3;
+            background: #24202c;
+            border: 1px solid #3a3246;
+            border-radius: 6px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .historial-calendario-nav:hover { background: #393046; }
+
+        .historial-calendario-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 3px;
+        }
+
+        .historial-dia-semana {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 32px;
+            color: #9999a3;
+            font-size: 10px;
+        }
+
+        .historial-dia {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+            height: 34px;
+            color: #e3e3e8;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 5px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .historial-dia:hover {
+            color: #fff;
+            background: #30263f;
+        }
+
+        .historial-dia.hoy { border-color: #665681; }
+
+        .historial-dia.seleccionado {
+            color: #fff;
+            background: #7965bb;
+            font-weight: 600;
+        }
+
+        .historial-calendario-pie {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 13px;
+            border-top: 1px solid #353535;
+        }
+
+        .historial-calendario-pie button {
+            padding: 7px 11px;
+            color: #d4c6f0;
+            background: #221c2c;
+            border: 1px solid #40334f;
+            border-radius: 5px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .historial-calendario-pie button:hover { background: #352844; }
 
         .historial-input::placeholder {
             color: #92929a;
@@ -186,21 +349,53 @@
             </div>
 
             <div class="historial-campo">
-                <label for="historialDesde">
-                    Desde
-                </label>
-                <input id="historialDesde"
-                       class="historial-input"
-                       type="date">
+                <label id="historialDesdeLabel">Desde</label>
+                <div class="historial-fecha-contenedor">
+                    <input type="hidden" id="historialDesde" value="">
+                    <button id="historialDesdeBoton"
+                            class="historial-fecha-boton"
+                            type="button"
+                            aria-haspopup="dialog"
+                            aria-expanded="false"
+                            aria-labelledby="historialDesdeLabel">
+                        <span id="historialDesdeTexto"
+                              class="historial-fecha-vacia">Seleccionar fecha</span>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <rect x="3" y="5" width="18" height="16" rx="2"/>
+                            <path d="M7 3v4M17 3v4M3 10h18"/>
+                        </svg>
+                    </button>
+                    <div id="historialDesdeCalendario"
+                         class="historial-calendario"
+                         role="dialog"
+                         aria-label="Seleccionar fecha inicial"
+                         hidden></div>
+                </div>
             </div>
 
             <div class="historial-campo">
-                <label for="historialHasta">
-                    Hasta
-                </label>
-                <input id="historialHasta"
-                       class="historial-input"
-                       type="date">
+                <label id="historialHastaLabel">Hasta</label>
+                <div class="historial-fecha-contenedor">
+                    <input type="hidden" id="historialHasta" value="">
+                    <button id="historialHastaBoton"
+                            class="historial-fecha-boton"
+                            type="button"
+                            aria-haspopup="dialog"
+                            aria-expanded="false"
+                            aria-labelledby="historialHastaLabel">
+                        <span id="historialHastaTexto"
+                              class="historial-fecha-vacia">Seleccionar fecha</span>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <rect x="3" y="5" width="18" height="16" rx="2"/>
+                            <path d="M7 3v4M17 3v4M3 10h18"/>
+                        </svg>
+                    </button>
+                    <div id="historialHastaCalendario"
+                         class="historial-calendario"
+                         role="dialog"
+                         aria-label="Seleccionar fecha final"
+                         hidden></div>
+                </div>
             </div>
 
             <div class="historial-campo">
@@ -286,6 +481,173 @@
     const desde = $("historialDesde");
     const hasta = $("historialHasta");
     const estado = $("historialEstado");
+
+    const botonesFecha = {
+        desde: $("historialDesdeBoton"),
+        hasta: $("historialHastaBoton")
+    };
+    const textosFecha = {
+        desde: $("historialDesdeTexto"),
+        hasta: $("historialHastaTexto")
+    };
+    const calendarios = {
+        desde: $("historialDesdeCalendario"),
+        hasta: $("historialHastaCalendario")
+    };
+
+    const camposFecha = { desde: desde, hasta: hasta };
+    let calendarioAbierto = null;
+    let mesVisible = new Date();
+
+    function rellenar(numero) {
+        return String(numero).padStart(2, "0");
+    }
+
+    function fechaISO(anio, mes, dia) {
+        return anio + "-" + rellenar(mes + 1) + "-" + rellenar(dia);
+    }
+
+    function fechaVisible(iso) {
+        if (!iso) return "Seleccionar fecha";
+        const partes = iso.split("-");
+        return partes[2] + "/" + partes[1] + "/" + partes[0];
+    }
+
+    function actualizarCampoFecha(tipo) {
+        const valor = camposFecha[tipo].value;
+        textosFecha[tipo].textContent = fechaVisible(valor);
+        textosFecha[tipo].classList.toggle("historial-fecha-vacia", !valor);
+    }
+
+    function cerrarCalendario() {
+        calendarioAbierto = null;
+        ["desde", "hasta"].forEach(tipo => {
+            calendarios[tipo].hidden = true;
+            botonesFecha[tipo].setAttribute("aria-expanded", "false");
+        });
+    }
+
+    function asignarFecha(tipo, valor) {
+        camposFecha[tipo].value = valor;
+        actualizarCampoFecha(tipo);
+        cerrarCalendario();
+    }
+
+    function abrirCalendario(tipo) {
+        if (consultando) return;
+
+        if (calendarioAbierto === tipo) {
+            cerrarCalendario();
+            return;
+        }
+
+        cerrarCalendario();
+        calendarioAbierto = tipo;
+
+        const valor = camposFecha[tipo].value;
+        if (valor) {
+            const partes = valor.split("-").map(Number);
+            mesVisible = new Date(partes[0], partes[1] - 1, 1);
+        } else {
+            const hoy = new Date();
+            mesVisible = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        }
+
+        calendarios[tipo].hidden = false;
+        botonesFecha[tipo].setAttribute("aria-expanded", "true");
+        dibujarCalendario(tipo);
+    }
+
+    function dibujarCalendario(tipo) {
+        const contenedor = calendarios[tipo];
+        contenedor.replaceChildren();
+
+        const anio = mesVisible.getFullYear();
+        const mes = mesVisible.getMonth();
+
+        const cabecera = document.createElement("div");
+        cabecera.className = "historial-calendario-cabecera";
+
+        const anterior = document.createElement("button");
+        anterior.type = "button";
+        anterior.className = "historial-calendario-nav";
+        anterior.textContent = "‹";
+        anterior.setAttribute("aria-label", "Mes anterior");
+
+        const titulo = document.createElement("strong");
+        titulo.textContent = meses[mes] + " " + anio;
+
+        const siguiente = document.createElement("button");
+        siguiente.type = "button";
+        siguiente.className = "historial-calendario-nav";
+        siguiente.textContent = "›";
+        siguiente.setAttribute("aria-label", "Mes siguiente");
+
+        anterior.addEventListener("click", () => {
+            mesVisible = new Date(anio, mes - 1, 1);
+            dibujarCalendario(tipo);
+        });
+        siguiente.addEventListener("click", () => {
+            mesVisible = new Date(anio, mes + 1, 1);
+            dibujarCalendario(tipo);
+        });
+
+        cabecera.append(anterior, titulo, siguiente);
+        contenedor.appendChild(cabecera);
+
+        const cuadricula = document.createElement("div");
+        cuadricula.className = "historial-calendario-grid";
+
+        diasSemana.forEach(nombre => {
+            const etiqueta = document.createElement("span");
+            etiqueta.className = "historial-dia-semana";
+            etiqueta.textContent = nombre;
+            cuadricula.appendChild(etiqueta);
+        });
+
+        const inicio = (new Date(anio, mes, 1).getDay() + 6) % 7;
+        for (let i = 0; i < inicio; i++) {
+            cuadricula.appendChild(document.createElement("span"));
+        }
+
+        const hoy = new Date();
+        const hoyISO = fechaISO(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+        const diasDelMes = new Date(anio, mes + 1, 0).getDate();
+
+        for (let dia = 1; dia <= diasDelMes; dia++) {
+            const valor = fechaISO(anio, mes, dia);
+            const boton = document.createElement("button");
+            boton.type = "button";
+            boton.className = "historial-dia";
+            boton.textContent = String(dia);
+            boton.setAttribute("aria-label", fechaVisible(valor));
+            boton.setAttribute("aria-pressed", String(valor === camposFecha[tipo].value));
+
+            if (valor === hoyISO) boton.classList.add("hoy");
+            if (valor === camposFecha[tipo].value) boton.classList.add("seleccionado");
+
+            boton.addEventListener("click", () => asignarFecha(tipo, valor));
+            cuadricula.appendChild(boton);
+        }
+
+        contenedor.appendChild(cuadricula);
+
+        const pie = document.createElement("div");
+        pie.className = "historial-calendario-pie";
+
+        const hoyBtn = document.createElement("button");
+        hoyBtn.type = "button";
+        hoyBtn.textContent = "Hoy";
+        hoyBtn.addEventListener("click", () => asignarFecha(tipo, hoyISO));
+
+        const quitarBtn = document.createElement("button");
+        quitarBtn.type = "button";
+        quitarBtn.textContent = "Quitar fecha";
+        quitarBtn.addEventListener("click", () => asignarFecha(tipo, ""));
+
+        pie.append(hoyBtn, quitarBtn);
+        contenedor.appendChild(pie);
+    }
 
     const buscarBtn = $("historialBuscar");
     const limpiarBtn = $("historialLimpiar");
@@ -409,9 +771,12 @@
         }
 
         consultando = true;
+        cerrarCalendario();
 
         buscarBtn.disabled = true;
         limpiarBtn.disabled = true;
+        botonesFecha.desde.disabled = true;
+        botonesFecha.hasta.disabled = true;
 
         contador.textContent = "Consultando...";
         mensaje("");
@@ -427,6 +792,8 @@
             consultando = false;
             buscarBtn.disabled = false;
             limpiarBtn.disabled = false;
+            botonesFecha.desde.disabled = false;
+            botonesFecha.hasta.disabled = false;
 
             mensaje(
                 "No se pudo iniciar la consulta del historial.",
@@ -440,6 +807,8 @@
 
         buscarBtn.disabled = false;
         limpiarBtn.disabled = false;
+        botonesFecha.desde.disabled = false;
+        botonesFecha.hasta.disabled = false;
 
         const movimientos = Array.isArray(datos.movimientos)
             ? datos.movimientos
@@ -454,6 +823,8 @@
 
         buscarBtn.disabled = false;
         limpiarBtn.disabled = false;
+        botonesFecha.desde.disabled = false;
+        botonesFecha.hasta.disabled = false;
 
         contador.textContent = "Consulta no disponible";
 
@@ -462,6 +833,24 @@
             true
         );
     };
+
+    botonesFecha.desde.addEventListener("click", () => abrirCalendario("desde"));
+    botonesFecha.hasta.addEventListener("click", () => abrirCalendario("hasta"));
+
+    document.addEventListener("click", evento => {
+        if (!calendarioAbierto) return;
+
+        const boton = botonesFecha[calendarioAbierto];
+        const calendario = calendarios[calendarioAbierto];
+        if (!boton.contains(evento.target) &&
+            !calendario.contains(evento.target)) {
+            cerrarCalendario();
+        }
+    });
+
+    document.addEventListener("keydown", evento => {
+        if (evento.key === "Escape") cerrarCalendario();
+    });
 
     formulario.addEventListener("submit", evento => {
         evento.preventDefault();
@@ -472,6 +861,9 @@
         ticketId.value = "";
         desde.value = "";
         hasta.value = "";
+        actualizarCampoFecha("desde");
+        actualizarCampoFecha("hasta");
+        cerrarCalendario();
         estado.value = "TODOS";
 
         consultar();
