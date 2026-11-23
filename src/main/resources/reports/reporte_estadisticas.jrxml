@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport name="reporte_estadisticas" language="java" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="792" leftMargin="25" rightMargin="25" topMargin="25" bottomMargin="25" whenNoDataType="AllSectionsNoDetail">
+    <parameter name="PERIODO" class="java.lang.String"><defaultValueExpression><![CDATA["Período no indicado"]]></defaultValueExpression></parameter>
+    <parameter name="FECHA_GENERACION" class="java.lang.String"><defaultValueExpression><![CDATA["Sin fecha"]]></defaultValueExpression></parameter>
+    <parameter name="TOTAL_TICKETS" class="java.lang.Integer"><defaultValueExpression><![CDATA[0]]></defaultValueExpression></parameter>
+    <parameter name="PENDIENTES" class="java.lang.Integer"><defaultValueExpression><![CDATA[0]]></defaultValueExpression></parameter>
+    <parameter name="EN_PROCESO" class="java.lang.Integer"><defaultValueExpression><![CDATA[0]]></defaultValueExpression></parameter>
+    <parameter name="RESUELTOS" class="java.lang.Integer"><defaultValueExpression><![CDATA[0]]></defaultValueExpression></parameter>
+    <parameter name="CERRADOS" class="java.lang.Integer"><defaultValueExpression><![CDATA[0]]></defaultValueExpression></parameter>
+    <parameter name="CATEGORIA_1" class="java.lang.String"><defaultValueExpression><![CDATA["Sin datos"]]></defaultValueExpression></parameter>
+    <parameter name="CATEGORIA_1_TOTAL" class="java.lang.Integer"><defaultValueExpression><![CDATA[0]]></defaultValueExpression></parameter>
+    <parameter name="CATEGORIA_2" class="java.lang.String"><defaultValueExpression><![CDATA["Sin datos"]]></defaultValueExpression></parameter>
+    <parameter name="CATEGORIA_2_TOTAL" class="java.lang.Integer"><defaultValueExpression><![CDATA[0]]></defaultValueExpression></parameter>
+    <parameter name="CATEGORIA_3" class="java.lang.String"><defaultValueExpression><![CDATA["Sin datos"]]></defaultValueExpression></parameter>
+    <parameter name="CATEGORIA_3_TOTAL" class="java.lang.Integer"><defaultValueExpression><![CDATA[0]]></defaultValueExpression></parameter>
+    <parameter name="OBSERVACION" class="java.lang.String"><defaultValueExpression><![CDATA["Indicadores calculados con los filtros seleccionados."]]></defaultValueExpression></parameter>
+    <title height="510">
+        <element kind="rectangle" x="0" y="0" width="792" height="510" backcolor="#FFFFFF" mode="Opaque"/>
+        <element kind="rectangle" x="0" y="0" width="792" height="98" backcolor="#121521" mode="Opaque"/>
+        <element kind="rectangle" x="0" y="0" width="7" height="98" backcolor="#9B84D9" mode="Opaque"/>
+        <element kind="staticText" x="23" y="14" width="570" height="15" fontName="DejaVu Sans" fontSize="8" bold="true" forecolor="#C4B6EE"><text><![CDATA[NAUTATICKET  /  INTELIGENCIA OPERATIVA]]></text></element>
+        <element kind="staticText" x="23" y="32" width="630" height="35" fontName="DejaVu Sans" fontSize="23" bold="true" forecolor="#FFFFFF"><text><![CDATA[Panorama estadístico]]></text></element>
+        <element kind="staticText" x="24" y="72" width="580" height="15" fontName="DejaVu Sans" fontSize="9" bold="false" forecolor="#BFC3D0"><text><![CDATA[Reporte ejecutivo de soporte TI  ·  Indicadores agregados]]></text></element>
+        <element kind="rectangle" x="648" y="24" width="118" height="45" backcolor="#282439" mode="Opaque"/>
+        <element kind="staticText" x="667" y="33" width="100" height="14" fontName="DejaVu Sans" fontSize="9" bold="true" forecolor="#D4C7F4"><text><![CDATA[RESUMEN]]></text></element>
+        <element kind="staticText" x="667" y="49" width="100" height="13" fontName="DejaVu Sans" fontSize="8" bold="false" forecolor="#FFFFFF"><text><![CDATA[SISTEMA]]></text></element>
+        <element kind="rectangle" x="0" y="114" width="186" height="100" backcolor="#F2F3F7" mode="Opaque"/>
+        <element kind="rectangle" x="0" y="114" width="186" height="4" backcolor="#8A73CD" mode="Opaque"/>
+        <element kind="staticText" x="15" y="128" width="166" height="16" fontName="DejaVu Sans" fontSize="8" bold="true" forecolor="#606879"><text><![CDATA[TICKETS REGISTRADOS]]></text></element>
+        <element kind="textField" x="13" y="148" width="158" height="39" fontName="DejaVu Sans" fontSize="26" bold="true" forecolor="#1B2234" isBlankWhenNull="true"><expression><![CDATA[String.valueOf($P{TOTAL_TICKETS} == null ? 0 : $P{TOTAL_TICKETS})]]></expression></element>
+        <element kind="staticText" x="15" y="191" width="166" height="13" fontName="DejaVu Sans" fontSize="8" bold="false" forecolor="#6C7380"><text><![CDATA[Universo del período]]></text></element>
+        <element kind="rectangle" x="202" y="114" width="186" height="100" backcolor="#F2F3F7" mode="Opaque"/>
+        <element kind="rectangle" x="202" y="114" width="186" height="4" backcolor="#8A73CD" mode="Opaque"/>
+        <element kind="staticText" x="217" y="128" width="166" height="16" fontName="DejaVu Sans" fontSize="8" bold="true" forecolor="#606879"><text><![CDATA[PENDIENTES]]></text></element>
+        <element kind="textField" x="215" y="148" width="158" height="39" fontName="DejaVu Sans" fontSize="26" bold="true" forecolor="#1B2234" isBlankWhenNull="true"><expression><![CDATA[String.valueOf($P{PENDIENTES} == null ? 0 : $P{PENDIENTES})]]></expression></element>
+        <element kind="staticText" x="217" y="191" width="166" height="13" fontName="DejaVu Sans" fontSize="8" bold="false" forecolor="#6C7380"><text><![CDATA[Por asignar o atender]]></text></element>
+        <element kind="rectangle" x="404" y="114" width="186" height="100" backcolor="#F2F3F7" mode="Opaque"/>
+        <element kind="rectangle" x="404" y="114" width="186" height="4" backcolor="#4679AD" mode="Opaque"/>
+        <element kind="staticText" x="419" y="128" width="166" height="16" fontName="DejaVu Sans" fontSize="8" bold="true" forecolor="#606879"><text><![CDATA[EN ATENCIÓN]]></text></element>
+        <element kind="textField" x="417" y="148" width="158" height="39" fontName="DejaVu Sans" fontSize="26" bold="true" forecolor="#1B2234" isBlankWhenNull="true"><expression><![CDATA[String.valueOf($P{EN_PROCESO} == null ? 0 : $P{EN_PROCESO})]]></expression></element>
+        <element kind="staticText" x="419" y="191" width="166" height="13" fontName="DejaVu Sans" fontSize="8" bold="false" forecolor="#6C7380"><text><![CDATA[Trabajo en curso]]></text></element>
+        <element kind="rectangle" x="606" y="114" width="186" height="100" backcolor="#F2F3F7" mode="Opaque"/>
+        <element kind="rectangle" x="606" y="114" width="186" height="4" backcolor="#23847B" mode="Opaque"/>
+        <element kind="staticText" x="621" y="128" width="166" height="16" fontName="DejaVu Sans" fontSize="8" bold="true" forecolor="#606879"><text><![CDATA[RESUELTOS]]></text></element>
+        <element kind="textField" x="619" y="148" width="158" height="39" fontName="DejaVu Sans" fontSize="26" bold="true" forecolor="#1B2234" isBlankWhenNull="true"><expression><![CDATA[String.valueOf($P{RESUELTOS} == null ? 0 : $P{RESUELTOS})]]></expression></element>
+        <element kind="staticText" x="621" y="191" width="166" height="13" fontName="DejaVu Sans" fontSize="8" bold="false" forecolor="#6C7380"><text><![CDATA[Solicitudes solucionadas]]></text></element>
+        <element kind="rectangle" x="0" y="230" width="485" height="235" backcolor="#F8F9FB" mode="Opaque"/>
+        <element kind="staticText" x="19" y="244" width="440" height="17" fontName="DejaVu Sans" fontSize="11" bold="true" forecolor="#22283A"><text><![CDATA[DISTRIBUCIÓN POR ESTADO]]></text></element>
+        <element kind="staticText" x="19" y="264" width="440" height="14" fontName="DejaVu Sans" fontSize="8" bold="false" forecolor="#747B8B"><text><![CDATA[Participación dentro del total de tickets]]></text></element>
+        <element kind="rectangle" x="19" y="283" width="447" height="1" backcolor="#E1E4EC" mode="Opaque"/>
+        <element kind="staticText" x="20" y="296" width="110" height="18" fontName="DejaVu Sans" fontSize="9" bold="true" forecolor="#303748"><text><![CDATA[Pendientes]]></text></element>
+        <element kind="textField" x="130" y="295" width="215" height="20" fontName="DejaVu Sans" fontSize="12" bold="true" forecolor="#8E77D0" isBlankWhenNull="true"><expression><![CDATA["▰".repeat(Math.min(22, (int)Math.round(22.0 * ($P{PENDIENTES} == null ? 0 : $P{PENDIENTES}) / Math.max(1, ($P{TOTAL_TICKETS} == null ? 0 : $P{TOTAL_TICKETS})))))]]></expression></element>
+        <element kind="textField" x="349" y="296" width="45" height="18" fontName="DejaVu Sans" fontSize="10" bold="true" forecolor="#263045" isBlankWhenNull="true"><expression><![CDATA[String.valueOf($P{PENDIENTES} == null ? 0 : $P{PENDIENTES})]]></expression></element>
+        <element kind="textField" x="398" y="296" width="65" height="17" fontName="DejaVu Sans" fontSize="8" bold="false" forecolor="#636C7E" isBlankWhenNull="true"><expression><![CDATA[String.format(java.util.Locale.US, "%.1f%%", 100.0 * ($P{PENDIENTES} == null ? 0 : $P{PENDIENTES}) / Math.max(1, ($P{TOTAL_TICKETS} == null ? 0 : $P{TOTAL_TICKETS})))]]></expression></element>
+        <element kind="staticText" x="20" y="336" width="110" height="18" fontName="DejaVu Sans" fontSize="9" bold="true" forecolor="#303748"><text><![CDATA[En proceso]]></text></element>
+        <element kind="textField" x="130" y="335" width="215" height="20" fontName="DejaVu Sans" fontSize="12" bold="true" forecolor="#538BC1" isBlankWhenNull="true"><expression><![CDATA["▰".repeat(Math.min(22, (int)Math.round(22.0 * ($P{EN_PROCESO} == null ? 0 : $P{EN_PROCESO}) / Math.max(1, ($P{TOTAL_TICKETS} == null ? 0 : $P{TOTAL_TICKETS})))))]]></expression></element>
+        <element kind="textField" x="349" y="336" width="45" height="18" fontName="DejaVu Sans" fontSize="10" bold="true" forecolor="#263045" isBlankWhenNull="true"><expression><![CDATA[String.valueOf($P{EN_PROCESO} == null ? 0 : $P{EN_PROCESO})]]></expression></element>
+        <element kind="textField" x="398" y="336" width="65" height="17" fontName="DejaVu Sans" fontSize="8" bold="false" forecolor="#636C7E" isBlankWhenNull="true"><expression><![CDATA[String.format(java.util.Locale.US, "%.1f%%", 100.0 * ($P{EN_PROCESO} == null ? 0 : $P{EN_PROCESO}) / Math.max(1, ($P{TOTAL_TICKETS} == null ? 0 : $P{TOTAL_TICKETS})))]]></expression></element>
+        <element kind="staticText" x="20" y="376" width="110" height="18" fontName="DejaVu Sans" fontSize="9" bold="true" forecolor="#303748"><text><![CDATA[Resueltos]]></text></element>
+        <element kind="textField" x="130" y="375" width="215" height="20" fontName="DejaVu Sans" fontSize="12" bold="true" forecolor="#23847B" isBlankWhenNull="true"><expression><![CDATA["▰".repeat(Math.min(22, (int)Math.round(22.0 * ($P{RESUELTOS} == null ? 0 : $P{RESUELTOS}) / Math.max(1, ($P{TOTAL_TICKETS} == null ? 0 : $P{TOTAL_TICKETS})))))]]></expression></element>
+        <element kind="textField" x="349" y="376" width="45" height="18" fontName="DejaVu Sans" fontSize="10" bold="true" forecolor="#263045" isBlankWhenNull="true"><expression><![CDATA[String.valueOf($P{RESUELTOS} == null ? 0 : $P{RESUELTOS})]]></expression></element>
+        <element kind="textField" x="398" y="376" width="65" height="17" fontName="DejaVu Sans" fontSize="8" bold="false" forecolor="#636C7E" isBlankWhenNull="true"><expression><![CDATA[String.format(java.util.Locale.US, "%.1f%%", 100.0 * ($P{RESUELTOS} == null ? 0 : $P{RESUELTOS}) / Math.max(1, ($P{TOTAL_TICKETS} == null ? 0 : $P{TOTAL_TICKETS})))]]></expression></element>
+        <element kind="staticText" x="20" y="416" width="110" height="18" fontName="DejaVu Sans" fontSize="9" bold="true" forecolor="#303748"><text><![CDATA[Cerrados]]></text></element>
+        <element kind="textField" x="130" y="415" width="215" height="20" fontName="DejaVu Sans" fontSize="12" bold="true" forecolor="#888F9E" isBlankWhenNull="true"><expression><![CDATA["▰".repeat(Math.min(22, (int)Math.round(22.0 * ($P{CERRADOS} == null ? 0 : $P{CERRADOS}) / Math.max(1, ($P{TOTAL_TICKETS} == null ? 0 : $P{TOTAL_TICKETS})))))]]></expression></element>
+        <element kind="textField" x="349" y="416" width="45" height="18" fontName="DejaVu Sans" fontSize="10" bold="true" forecolor="#263045" isBlankWhenNull="true"><expression><![CDATA[String.valueOf($P{CERRADOS} == null ? 0 : $P{CERRADOS})]]></expression></element>
+        <element kind="textField" x="398" y="416" width="65" height="17" fontName="DejaVu Sans" fontSize="8" bold="false" forecolor="#636C7E" isBlankWhenNull="true"><expression><![CDATA[String.format(java.util.Locale.US, "%.1f%%", 100.0 * ($P{CERRADOS} == null ? 0 : $P{CERRADOS}) / Math.max(1, ($P{TOTAL_TICKETS} == null ? 0 : $P{TOTAL_TICKETS})))]]></expression></element>
+        <element kind="rectangle" x="501" y="230" width="291" height="235" backcolor="#171B2B" mode="Opaque"/>
+        <element kind="staticText" x="520" y="245" width="250" height="17" fontName="DejaVu Sans" fontSize="10" bold="true" forecolor="#DED7F2"><text><![CDATA[EFICIENCIA Y DEMANDA]]></text></element>
+        <element kind="staticText" x="520" y="268" width="230" height="16" fontName="DejaVu Sans" fontSize="9" bold="false" forecolor="#ABB2C5"><text><![CDATA[Tasa de resolución]]></text></element>
+        <element kind="textField" x="520" y="286" width="200" height="37" fontName="DejaVu Sans" fontSize="23" bold="true" forecolor="#FFFFFF" isBlankWhenNull="true"><expression><![CDATA[String.format(java.util.Locale.US, "%.1f%%", 100.0 * ($P{RESUELTOS} == null ? 0 : $P{RESUELTOS}) / Math.max(1, ($P{TOTAL_TICKETS} == null ? 0 : $P{TOTAL_TICKETS})))]]></expression></element>
+        <element kind="staticText" x="520" y="337" width="257" height="16" fontName="DejaVu Sans" fontSize="8" bold="true" forecolor="#BEB2E5"><text><![CDATA[CATEGORÍAS CON MÁS SOLICITUDES]]></text></element>
+        <element kind="staticText" x="520" y="360" width="29" height="18" fontName="DejaVu Sans" fontSize="9" bold="true" forecolor="#AA94E3"><text><![CDATA[01]]></text></element>
+        <element kind="textField" x="553" y="360" width="174" height="18" fontName="DejaVu Sans" fontSize="9" bold="false" forecolor="#F1EFF6" isBlankWhenNull="true"><expression><![CDATA[($P{CATEGORIA_1} == null ? "Sin datos" : $P{CATEGORIA_1})]]></expression></element>
+        <element kind="textField" x="744" y="360" width="35" height="18" fontName="DejaVu Sans" fontSize="9" bold="true" forecolor="#F1EFF6" isBlankWhenNull="true"><expression><![CDATA[String.valueOf($P{CATEGORIA_1_TOTAL} == null ? 0 : $P{CATEGORIA_1_TOTAL})]]></expression></element>
+        <element kind="staticText" x="520" y="388" width="29" height="18" fontName="DejaVu Sans" fontSize="9" bold="true" forecolor="#AA94E3"><text><![CDATA[02]]></text></element>
+        <element kind="textField" x="553" y="388" width="174" height="18" fontName="DejaVu Sans" fontSize="9" bold="false" forecolor="#F1EFF6" isBlankWhenNull="true"><expression><![CDATA[($P{CATEGORIA_2} == null ? "Sin datos" : $P{CATEGORIA_2})]]></expression></element>
+        <element kind="textField" x="744" y="388" width="35" height="18" fontName="DejaVu Sans" fontSize="9" bold="true" forecolor="#F1EFF6" isBlankWhenNull="true"><expression><![CDATA[String.valueOf($P{CATEGORIA_2_TOTAL} == null ? 0 : $P{CATEGORIA_2_TOTAL})]]></expression></element>
+        <element kind="staticText" x="520" y="416" width="29" height="18" fontName="DejaVu Sans" fontSize="9" bold="true" forecolor="#AA94E3"><text><![CDATA[03]]></text></element>
+        <element kind="textField" x="553" y="416" width="174" height="18" fontName="DejaVu Sans" fontSize="9" bold="false" forecolor="#F1EFF6" isBlankWhenNull="true"><expression><![CDATA[($P{CATEGORIA_3} == null ? "Sin datos" : $P{CATEGORIA_3})]]></expression></element>
+        <element kind="textField" x="744" y="416" width="35" height="18" fontName="DejaVu Sans" fontSize="9" bold="true" forecolor="#F1EFF6" isBlankWhenNull="true"><expression><![CDATA[String.valueOf($P{CATEGORIA_3_TOTAL} == null ? 0 : $P{CATEGORIA_3_TOTAL})]]></expression></element>
+        <element kind="rectangle" x="0" y="481" width="792" height="1" backcolor="#DEE1E8" mode="Opaque"/>
+        <element kind="staticText" x="0" y="490" width="70" height="15" fontName="DejaVu Sans" fontSize="8" bold="true" forecolor="#818898"><text><![CDATA[ALCANCE]]></text></element>
+        <element kind="textField" x="67" y="490" width="340" height="15" fontName="DejaVu Sans" fontSize="8" bold="false" forecolor="#31384B" isBlankWhenNull="true"><expression><![CDATA[($P{PERIODO} == null ? "Período no indicado" : $P{PERIODO})]]></expression></element>
+        <element kind="staticText" x="430" y="490" width="57" height="15" fontName="DejaVu Sans" fontSize="8" bold="true" forecolor="#818898"><text><![CDATA[EMISIÓN]]></text></element>
+        <element kind="textField" x="486" y="490" width="302" height="15" fontName="DejaVu Sans" fontSize="8" bold="false" forecolor="#31384B" isBlankWhenNull="true"><expression><![CDATA[($P{FECHA_GENERACION} == null ? "Sin fecha" : $P{FECHA_GENERACION})]]></expression></element>
+    </title>
+    <pageFooter height="25">
+        <element kind="staticText" x="0" y="5" width="670" height="14" fontName="DejaVu Sans" fontSize="8" bold="false" forecolor="#747B8B"><text><![CDATA[NAUTATICKET · Informe estadístico / Diseño de plantilla para integración]]></text></element>
+        <element kind="textField" x="700" y="5" width="92" height="14" fontName="DejaVu Sans" fontSize="8" bold="false" forecolor="#747B8B" isBlankWhenNull="true"><expression><![CDATA["Página " + $V{PAGE_NUMBER}]]></expression></element>
+    </pageFooter>
+</jasperReport>
