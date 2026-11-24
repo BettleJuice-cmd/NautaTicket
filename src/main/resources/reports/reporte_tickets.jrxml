@@ -33,7 +33,7 @@
 
         <element kind="rectangle"
                  x="0" y="0" width="792" height="53"
-                 backcolor="#213A5C" mode="Opaque"/>
+                 backcolor="#213A5C" mode="Opaque"><pen lineWidth="0"/></element>
 
         <element kind="staticText"
                  x="15" y="8" width="760" height="23"
@@ -45,7 +45,7 @@
         <element kind="staticText"
                  x="15" y="32" width="760" height="16"
                  fontSize="10" forecolor="#FFFFFF">
-            <text><![CDATA[Reporte General de Tickets de Soporte TI]]></text>
+            <text><![CDATA[Informe de tickets de soporte TI]]></text>
         </element>
 
         <element kind="textField"
@@ -74,7 +74,7 @@
 
         <element kind="rectangle"
                  x="0" y="0" width="792" height="28"
-                 backcolor="#DDE6F2" mode="Opaque"/>
+                 backcolor="#DDE6F2" mode="Opaque"><pen lineWidth="0"/></element>
 
         <element kind="staticText" x="2" y="7" width="35" height="16" bold="true" fontSize="8">
             <text><![CDATA[ID]]></text>
@@ -185,7 +185,7 @@
 
         <element kind="rectangle"
                  x="0" y="5" width="792" height="105"
-                 backcolor="#F0F3F8" mode="Opaque"/>
+                 backcolor="#F0F3F8" mode="Opaque"><pen lineWidth="0"/></element>
 
         <element kind="staticText"
                  x="15" y="14" width="350" height="22"

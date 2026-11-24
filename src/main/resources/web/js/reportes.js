@@ -35,6 +35,104 @@
             border-radius: 9px;
         }
 
+        .reporte-tipos {
+            margin: 0 0 24px;
+            padding: 0;
+            border: 0;
+        }
+
+        .reporte-tipos legend {
+            margin-bottom: 6px;
+            color: #f2f2f4;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .reporte-tipos-ayuda {
+            margin: 0 0 16px;
+            color: #a6a6b0;
+            font-size: 12px;
+        }
+
+        .reporte-tipos-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .reporte-tipo {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            min-height: 77px;
+            padding: 14px;
+            box-sizing: border-box;
+            background: #111111;
+            border: 1px solid #333139;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .reporte-tipo.seleccionado {
+            background: #1e1828;
+            border-color: #9783db;
+        }
+
+        .reporte-tipo input {
+            margin: 3px 0 0;
+            accent-color: #9783db;
+        }
+
+        .reporte-tipo strong, .reporte-tipo small {
+            display: block;
+        }
+
+        .reporte-tipo strong {
+            color: #f2f2f4;
+            font-size: 13px;
+        }
+
+        .reporte-tipo small {
+            margin-top: 5px;
+            color: #a6a6b0;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .reporte-disponibilidad {
+            margin: 16px 0 0;
+            padding: 12px 14px;
+            color: #c9baf4;
+            background: #17121e;
+            border: 1px solid #40304d;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .reporte-resumen {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .reporte-resumen-item {
+            padding: 15px;
+            background: #141414;
+            border: 1px solid #303030;
+            border-radius: 7px;
+        }
+
+        .reporte-resumen-item strong {
+            display: block;
+            margin-bottom: 6px;
+            color: #eee9fb;
+            font-size: 13px;
+        }
+
+        .reporte-informacion .reporte-resumen-item p {
+            margin: 0;
+        }
+
         .reporte-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -349,7 +447,7 @@
         }
 
         @media (max-width: 850px) {
-            .reporte-grid {
+            .reporte-grid, .reporte-tipos-grid, .reporte-resumen {
                 grid-template-columns: 1fr;
             }
 
@@ -374,6 +472,30 @@
 
         <form id="reporteFormulario"
               class="reporte-formulario">
+
+            <fieldset class="reporte-tipos">
+                <legend>Tipo de informe</legend>
+                <p class="reporte-tipos-ayuda">Elige qué contenido quieres consultar en la vista previa y guardar en PDF.</p>
+                <div class="reporte-tipos-grid">
+                    <label class="reporte-tipo">
+                        <input type="radio" name="tipoReporte" value="TICKETS">
+                        <span><strong>Tickets</strong><small>Listado según los filtros seleccionados.</small></span>
+                    </label>
+                    <label class="reporte-tipo">
+                        <input type="radio" name="tipoReporte" value="HISTORIAL">
+                        <span><strong>Historial</strong><small>Movimientos y cambios de los tickets.</small></span>
+                    </label>
+                    <label class="reporte-tipo">
+                        <input type="radio" name="tipoReporte" value="GRAFICOS">
+                        <span><strong>Gráficos</strong><small>Indicadores por estado y categoría.</small></span>
+                    </label>
+                    <label class="reporte-tipo">
+                        <input type="radio" name="tipoReporte" value="GENERAL" checked>
+                        <span><strong>General</strong><small>Resumen de tickets, historial y gráficos.</small></span>
+                    </label>
+                </div>
+                <p id="reporteDisponibilidad" class="reporte-disponibilidad" role="status" hidden></p>
+            </fieldset>
 
             <div class="reporte-grid">
 
@@ -489,24 +611,14 @@
              hidden></div>
 
         <div class="reporte-informacion">
-            <h2>Contenido del reporte</h2>
-
-            <p id="reporteDescripcion">
-                El PDF se genera mediante JasperReports
-                utilizando los registros de PostgreSQL.
-            </p>
-
-            <p id="reportePermisos">
-                El documento contiene los tickets que
-                cumplen los filtros seleccionados,
-                de acuerdo con los permisos del usuario.
-            </p>
+            <h2 id="reporteContenidoTitulo">Informe general</h2>
+            <div id="reporteContenidoResumen" class="reporte-resumen"></div>
 
             <div id="reporteVistaPrevia"
                  class="reporte-vista-previa"
                  hidden>
                 <div class="reporte-vista-cabecera">
-                    <span>Vista previa generada con los filtros seleccionados</span>
+                    <span id="reporteVistaTitulo">Vista previa del informe general</span>
                     <button id="reporteGuardar"
                             class="button button-primary"
                             type="button">
@@ -525,6 +637,11 @@
 
     const formulario = $("reporteFormulario");
     const estado = $("reporteEstado");
+    const tipos = Array.from(formulario.querySelectorAll('input[name="tipoReporte"]'));
+    const disponibilidad = $("reporteDisponibilidad");
+    const contenidoTitulo = $("reporteContenidoTitulo");
+    const contenidoResumen = $("reporteContenidoResumen");
+    const vistaTitulo = $("reporteVistaTitulo");
 
     const generarBtn = $("reporteGenerar");
     const limpiarBtn = $("reporteLimpiar");
@@ -532,6 +649,64 @@
     const vistaPrevia = $("reporteVistaPrevia");
     const vistaDocumento = $("reporteVistaDocumento");
     const guardarBtn = $("reporteGuardar");
+
+    const nombresTipo = {
+        TICKETS: "Tickets",
+        HISTORIAL: "Historial",
+        GRAFICOS: "Gráficos",
+        GENERAL: "General"
+    };
+
+    function tipoSeleccionado() {
+        return tipos.find(radio => radio.checked).value;
+    }
+
+    function invalidarVista() {
+        vistaPrevia.hidden = true;
+        vistaDocumento.srcdoc = "";
+        guardarBtn.disabled = true;
+    }
+
+    function actualizarTipo() {
+        const tipo = tipoSeleccionado();
+        tipos.forEach(radio => {
+            radio.parentElement.classList.toggle("seleccionado", radio.checked);
+        });
+        generarBtn.disabled = procesando;
+        disponibilidad.hidden = tipo !== "HISTORIAL";
+        disponibilidad.textContent = tipo === "HISTORIAL"
+            ? "El informe de historial está disponible para administradores."
+            : "";
+        contenidoTitulo.textContent = "Informe " + nombresTipo[tipo].toLowerCase();
+        const detalles = tipo === "GENERAL"
+            ? [
+                ["Tickets", "Total y distribución por estado de los tickets visibles para tu usuario."],
+                ["Historial", "Cantidad de movimientos, cambios de estado y de técnico para administradores."],
+                ["Gráficos", "Tasa de finalización y categoría más frecuente con los filtros elegidos."],
+                ["Detalle", "Este informe es un resumen. Los otros botones muestran cada informe completo."]
+              ]
+            : tipo === "TICKETS"
+                ? [["Tickets", "Listado de tickets que cumplen las fechas y el estado elegidos, según tus permisos."],
+                   ["Vista previa y PDF", "La vista previa muestra el mismo listado que se guardará en PDF."]]
+                : tipo === "HISTORIAL"
+                    ? [["Movimientos", "Cronología de cambios de estado y de técnico registrados en los tickets."],
+                       ["Filtros y acceso", "Las fechas y el estado se aplican al historial. Este informe requiere permisos de administrador."]]
+                    : [["Estadísticas", "Resumen de los tickets visibles para tu usuario: estados, tasa de resolución y categorías más frecuentes."],
+                       ["Filtros", "Las fechas y el estado se aplican a los indicadores de esta plantilla."]];
+        contenidoResumen.replaceChildren();
+        detalles.forEach(([titulo, descripcion]) => {
+            const item = document.createElement("div");
+            item.className = "reporte-resumen-item";
+            const encabezado = document.createElement("strong");
+            encabezado.textContent = titulo;
+            const texto = document.createElement("p");
+            texto.textContent = descripcion;
+            item.append(encabezado, texto);
+            contenidoResumen.appendChild(item);
+        });
+        invalidarVista();
+        mensajeElemento.hidden = true;
+    }
 
     const botonesFecha = {
         desde: $("reporteDesdeBoton"),
@@ -590,6 +765,7 @@
         }
 
         actualizarCampo(tipo);
+        invalidarVista();
         cerrarCalendario();
     }
 
@@ -795,6 +971,7 @@
         generarBtn.disabled = bloqueado;
         limpiarBtn.disabled = bloqueado;
         estado.disabled = bloqueado;
+        tipos.forEach(radio => { radio.disabled = bloqueado; });
 
         botonesFecha.desde.disabled = bloqueado;
         botonesFecha.hasta.disabled = bloqueado;
@@ -810,6 +987,7 @@
 
     function generarReporte() {
         if (procesando) return;
+        const tipo = tipoSeleccionado();
 
         if (fechaDesde && fechaHasta &&
             fechaDesde > fechaHasta) {
@@ -821,13 +999,15 @@
         }
 
         bloquearFormulario(true);
+        invalidarVista();
         mensajeElemento.hidden = true;
 
         try {
             puente.generarReporte(
                 fechaDesde,
                 fechaHasta,
-                estado.value
+                estado.value,
+                tipo
             );
         } catch (error) {
             bloquearFormulario(false);
@@ -854,9 +1034,11 @@
             vistaDocumento.srcdoc = resultado.vistaPrevia;
             vistaPrevia.hidden = false;
             guardarBtn.disabled = false;
+            vistaTitulo.textContent = "Vista previa del informe " +
+                nombresTipo[tipoSeleccionado()].toLowerCase();
+        } else if (!vistaPrevia.hidden) {
+            guardarBtn.disabled = false;
         }
-
-        guardarBtn.disabled = false;
 
         mostrarMensaje(
             resultado.mensaje ||
@@ -888,6 +1070,9 @@
         abrirCalendario("hasta");
     });
 
+    tipos.forEach(radio => radio.addEventListener("change", actualizarTipo));
+    estado.addEventListener("change", invalidarVista);
+
     // Cerrar al hacer clic fuera del calendario.
     document.addEventListener("click", evento => {
         if (!calendarioAbierto) return;
@@ -918,17 +1103,18 @@
         fechaDesde = "";
         fechaHasta = "";
         estado.value = "TODOS";
+        formulario.querySelector('input[value="GENERAL"]').checked = true;
+        actualizarTipo();
 
         actualizarCampo("desde");
         actualizarCampo("hasta");
         cerrarCalendario();
 
         mensajeElemento.hidden = true;
-        vistaPrevia.hidden = true;
-        vistaDocumento.srcdoc = "";
-        guardarBtn.disabled = false;
+        invalidarVista();
     });
 
     actualizarCampo("desde");
     actualizarCampo("hasta");
+    actualizarTipo();
 })();

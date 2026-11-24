@@ -14,12 +14,15 @@ import java.util.Map;
 /** Páginas vectoriales de gráficos para la vista previa y el PDF. */
 final class ReporteGraficosTecnicos {
     private static final int POR_PAGINA = 8;
-    private static final String VERDE = "#37B978";
-    private static final String ROJO = "#DF6674";
-    private static final String MORADO = "#9783DB";
-    private static final String AMARILLO = "#D9A441";
-    private static final String AZUL = "#5D91D6";
-    private static final String GRIS = "#8792A1";
+    private static final String VERDE = "#16A58A";
+    private static final String ROJO = "#D46A68";
+    private static final String MORADO = "#7489BC";
+    private static final String AMARILLO = "#DDA949";
+    private static final String AZUL = "#5C9BD1";
+    private static final String GRIS = "#8D78B8";
+    private static final String TINTA = "#152A3D";
+    private static final String TEXTO = "#526477";
+    private static final String FONDO = "#F1F5F8";
 
     private ReporteGraficosTecnicos() { }
 
@@ -52,48 +55,56 @@ final class ReporteGraficosTecnicos {
                     topMargin="25" bottomMargin="25">
                   <title height="530">
                 """);
-        rectangulo(xml, 0, 0, 792, 53, "#213A5C");
-        texto(xml, "NAUTATICKET - Estados y tiempos", 15, 9, 760, 23,
-                17, true, "#FFFFFF");
-        texto(xml, "Resumen de tickets y técnicos - página " + numero + " de " + paginas,
-                15, 34, 760, 14, 9, false, "#FFFFFF");
-        texto(xml, "Estado actual y promedio desde la asignación hasta la resolución. Datos globales, sin filtros de la tabla.",
-                0, 62, 792, 18, 9, false, "#526174");
-        graficoEstados(xml, estados, 90);
-        graficoPromedio(xml, pagina, todos, 302);
-        texto(xml, "Promedio: verde menor tiempo    Morado intermedio    Rojo mayor tiempo",
-                0, 502, 680, 15, 8, false, "#526174");
-        texto(xml, "NautaTicket - Estados y resolución", 0, 518, 792, 10,
-                8, false, "#777777");
+        rectangulo(xml, 0, 0, 792, 62, TINTA);
+        rectangulo(xml, 0, 0, 6, 62, VERDE);
+        texto(xml, "NAUTATICKET / ANÁLISIS", 20, 8, 750, 16,
+                9, true, "#77D5D0");
+        texto(xml, "Estados y tiempos de resolución", 20, 27, 750, 27,
+                19, true, "#FFFFFF");
+        texto(xml, "Datos globales del sistema · Página " + numero + " de " + paginas,
+                2, 70, 785, 17, 9, false, TEXTO);
+        rectangulo(xml, 0, 98, 792, 184, FONDO);
+        graficoEstados(xml, estados, 111);
+        rectangulo(xml, 0, 294, 792, 210, FONDO);
+        graficoPromedio(xml, pagina, todos, 307);
+        texto(xml, "NautaTicket · Promedio medido desde la asignación hasta la resolución",
+                0, 517, 792, 12, 8, false, TEXTO);
         xml.append("  </title>\n</jasperReport>\n");
         return xml.toString();
     }
 
     private static void graficoEstados(StringBuilder xml,
             Map<String, Long> estados, int y) {
-        texto(xml, "Tickets por estado", 0, y, 792, 22,
-                13, true, "#213A5C");
+        texto(xml, "01  Tickets por estado", 14, y, 760, 22,
+                13, true, TINTA);
+        texto(xml, "Cantidad y porcentaje de todos los tickets", 14, y + 22,
+                760, 14, 8, false, TEXTO);
         String[][] opciones = {
                 {"PENDIENTE", "Pendiente", AMARILLO},
                 {"EN_PROCESO", "En proceso", AZUL},
                 {"RESUELTO", "Resuelto", VERDE},
                 {"CERRADO", "Cerrado", GRIS}
         };
+        long totalGeneral = estados.values().stream().mapToLong(Long::longValue).sum();
         long maximo = Math.max(1, estados.values().stream()
                 .mapToLong(Long::longValue).max().orElse(0));
         for (int indice = 0; indice < opciones.length; indice++) {
             String[] estado = opciones[indice];
             long total = estados.getOrDefault(estado[0], 0L);
-            int filaY = y + 32 + indice * 25;
-            texto(xml, estado[1], 0, filaY, 238, 17, 9, false, "#243348");
-            rectangulo(xml, 245, filaY + 1, 380, 13, "#E7E9ED");
+            int filaY = y + 45 + indice * 27;
+            texto(xml, estado[1], 14, filaY, 205, 18, 9, true, TINTA);
+            rectangulo(xml, 220, filaY + 3, 345, 12, "#DCE5EB");
             if (total > 0) {
-                rectangulo(xml, 245, filaY + 1,
-                        Math.max(2, (int) Math.round(total / (double) maximo * 380)),
-                        13, estado[2]);
+                rectangulo(xml, 220, filaY + 3,
+                        Math.max(3, (int) Math.round(total / (double) maximo * 345)),
+                        12, estado[2]);
             }
             texto(xml, total + (total == 1 ? " ticket" : " tickets"),
-                    635, filaY, 157, 16, 9, false, "#243348");
+                    580, filaY, 100, 18, 9, true, TINTA);
+            long porcentaje = totalGeneral == 0 ? 0
+                    : Math.round(total * 100.0 / totalGeneral);
+            texto(xml, porcentaje + "% del total", 684, filaY, 95, 18,
+                    9, false, TEXTO);
         }
     }
 
@@ -101,11 +112,13 @@ final class ReporteGraficosTecnicos {
             List<TiempoResolucionService.ResumenTecnico> pagina,
             List<TiempoResolucionService.ResumenTecnico> todos,
             int y) {
-        texto(xml, "Tiempo promedio de todos sus tickets", 0, y, 792, 22,
-                13, true, "#213A5C");
+        texto(xml, "02  Tiempo promedio por técnico", 14, y, 760, 22,
+                13, true, TINTA);
+        texto(xml, "Cada barra muestra el tiempo medio de sus tickets resueltos; escala relativa al mayor promedio.",
+                14, y + 22, 760, 14, 8, false, TEXTO);
         if (pagina.isEmpty()) {
-            texto(xml, "Aún no hay tickets resueltos.", 0, y + 42,
-                    792, 18, 10, false, "#526174");
+            texto(xml, "Aún no hay tickets resueltos para calcular promedios.",
+                    14, y + 62, 760, 18, 10, false, TEXTO);
             return;
         }
         double menor = todos.stream().mapToDouble(
@@ -118,20 +131,24 @@ final class ReporteGraficosTecnicos {
         for (int indice = 0; indice < pagina.size(); indice++) {
             var tecnico = pagina.get(indice);
             double segundos = tecnico.promedioSegundos();
-            int filaY = y + 32 + indice * 20;
+            int filaY = y + 45 + indice * 18;
             texto(xml, tecnico.nombre() + " (#" + tecnico.id() + ")",
-                    0, filaY, 238, 16, 9, false, "#243348");
-            rectangulo(xml, 245, filaY + 1, 380, 13, "#E7E9ED");
+                    14, filaY, 205, 16, 8, false, TINTA);
+            rectangulo(xml, 220, filaY + 2, 345, 11, "#DCE5EB");
             String color = MORADO;
             if (menor < mayor) {
                 if (Double.compare(segundos, menor) == 0) color = VERDE;
                 else if (Double.compare(segundos, mayor) == 0) color = ROJO;
             }
-            rectangulo(xml, 245, filaY + 1,
-                    Math.max(2, (int) Math.round(segundos / escala * 380)), 13, color);
+            rectangulo(xml, 220, filaY + 2,
+                    Math.max(3, (int) Math.round(segundos / escala * 345)), 11, color);
             texto(xml, TiempoResolucionService.formatear(Math.round(segundos)),
-                    635, filaY, 157, 16, 9, false, "#243348");
+                    580, filaY, 195, 16, 9, true, TINTA);
         }
+        texto(xml, menor < mayor
+                        ? "Verde: menor promedio   Azul: intermedio   Coral: mayor promedio"
+                        : "Todos los técnicos tienen el mismo promedio.",
+                14, 486, 760, 14, 8, false, TEXTO);
     }
 
     private static void rectangulo(StringBuilder xml, int x, int y,
@@ -151,6 +168,7 @@ final class ReporteGraficosTecnicos {
                 .append(ancho).append("\" height=\"").append(alto)
                 .append("\" fontSize=\"").append(tamano)
                 .append("\" bold=\"").append(negrita)
+                .append("\" fontName=\"Segoe UI")
                 .append("\" forecolor=\"").append(color)
                 .append("\"><text>").append(escaparXml(contenido))
                 .append("</text></element>\n");
