@@ -7,6 +7,7 @@ import javafx.stage.Stage;
 
 import ni.edu.uam.nautaticket.model.Usuario;
 import ni.edu.uam.nautaticket.service.ReporteService;
+import ni.edu.uam.nautaticket.service.ReporteMovimientosService;
 import net.sf.jasperreports.engine.JasperPrint;
 import ni.edu.uam.nautaticket.util.HibernateUtil;
 
@@ -45,6 +46,7 @@ public class WebReporteBridge {
 
     private boolean procesando;
     private JasperPrint reporteEnVista;
+    private String tipoEnVista;
 
     public WebReporteBridge(
             WebEngine engine,
@@ -70,12 +72,14 @@ public class WebReporteBridge {
     public void desactivar() {
         activo.set(false);
         reporteEnVista = null;
+        tipoEnVista = null;
     }
 
     public void generarReporte(
             String desde,
             String hasta,
-            String estado
+            String estado,
+            String tipo
     ) {
 
         if (!paginaAutorizada()) {
@@ -95,11 +99,16 @@ public class WebReporteBridge {
         final LocalDate fechaDesde;
         final LocalDate fechaHasta;
         final String estadoFiltro;
+        final String tipoReporte;
 
         try {
             fechaDesde = convertirFecha(desde);
             fechaHasta = convertirFecha(hasta);
             estadoFiltro = convertirEstado(estado);
+            tipoReporte = tipo == null ? "" : tipo.trim().toUpperCase(java.util.Locale.ROOT);
+            if (!Set.of("GENERAL", "TICKETS", "HISTORIAL", "GRAFICOS").contains(tipoReporte)) {
+                throw new IllegalArgumentException("El tipo de informe no es válido.");
+            }
 
             if (fechaDesde != null &&
                     fechaHasta != null &&
@@ -116,6 +125,8 @@ public class WebReporteBridge {
         }
 
         procesando = true;
+        reporteEnVista = null;
+        tipoEnVista = null;
         Task<JasperPrint> tarea = new Task<>() {
 
             @Override
@@ -127,17 +138,12 @@ public class WebReporteBridge {
                     );
                 }
 
-                ReporteService servicio =
-                        new ReporteService(
-                                sessionFactory,
-                                usuarioId
-                        );
-
-                return servicio.prepararReporte(
-                        fechaDesde,
-                        fechaHasta,
-                        estadoFiltro
-                );
+                if ("HISTORIAL".equals(tipoReporte)) {
+                    return new ReporteMovimientosService(sessionFactory, usuarioId)
+                            .prepararReporte(fechaDesde, fechaHasta, estadoFiltro);
+                }
+                return new ReporteService(sessionFactory, usuarioId)
+                        .prepararReporte(fechaDesde, fechaHasta, estadoFiltro, tipoReporte);
             }
         };
 
@@ -152,6 +158,7 @@ public class WebReporteBridge {
                 String vistaPrevia = ReporteService.crearVistaPrevia(documento);
 
                 reporteEnVista = documento;
+                tipoEnVista = tipoReporte;
                 procesando = false;
                 enviarResultado(
                         true,
@@ -257,8 +264,14 @@ public class WebReporteBridge {
         }
 
         javafx.stage.FileChooser selector = new javafx.stage.FileChooser();
-        selector.setTitle("Guardar reporte de tickets");
-        selector.setInitialFileName("NautaTicket_Reporte_Tickets.pdf");
+        String nombre = switch (tipoEnVista) {
+            case "TICKETS" -> "Tickets";
+            case "HISTORIAL" -> "Historial";
+            case "GRAFICOS" -> "Estadisticas";
+            default -> "General";
+        };
+        selector.setTitle("Guardar informe de " + nombre.toLowerCase(java.util.Locale.ROOT));
+        selector.setInitialFileName("NautaTicket_Reporte_" + nombre + ".pdf");
         selector.getExtensionFilters().add(
                 new javafx.stage.FileChooser.ExtensionFilter(
                         "Documento PDF (*.pdf)", "*.pdf"

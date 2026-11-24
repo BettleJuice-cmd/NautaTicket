@@ -5,7 +5,7 @@ import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
-import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+import net.sf.jasperreports.engine.data.JRMapCollectionDataSource;
 
 import ni.edu.uam.nautaticket.model.HistorialTicket;
 import ni.edu.uam.nautaticket.model.Usuario;
@@ -220,9 +220,9 @@ public class ReporteMovimientosService {
                             plantilla
                     );
 
-            JRBeanCollectionDataSource datos =
-                    new JRBeanCollectionDataSource(
-                            filas
+            JRMapCollectionDataSource datos =
+                    new JRMapCollectionDataSource(
+                            filas.stream().map(ReporteMovimientosService::camposReporte).toList()
                     );
 
             return JasperFillManager.fillReport(
@@ -239,6 +239,20 @@ public class ReporteMovimientosService {
                     e
             );
         }
+    }
+
+    static Map<String, ?> camposReporte(FilaMovimiento fila) {
+        Map<String, Object> campos = new HashMap<>();
+        campos.put("idHistorial", fila.getIdHistorial());
+        campos.put("idTicket", fila.getIdTicket());
+        campos.put("tituloTicket", fila.getTituloTicket());
+        campos.put("fecha", fila.getFecha());
+        campos.put("responsable", fila.getResponsable());
+        campos.put("tipo", fila.getTipo());
+        campos.put("estadoAnterior", fila.getEstadoAnterior());
+        campos.put("estadoNuevo", fila.getEstadoNuevo());
+        campos.put("comentario", fila.getComentario());
+        return campos;
     }
 
     private String normalizarEstado(String estado) {

@@ -8,6 +8,7 @@ module ni.edu.uam.nautaticket {
     requires java.sql;
     requires java.net.http;
     requires java.naming;
+    requires java.desktop;
 
     requires org.postgresql.jdbc;
     requires org.hibernate.orm.core;
