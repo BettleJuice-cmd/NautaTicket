@@ -19,6 +19,39 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ReportesIntegracionTest {
     @Test
+    void generalResumeTicketsHistorialYEstadisticas() throws Exception {
+        try (InputStream archivo = getClass().getResourceAsStream("/reports/reporte_general.jrxml")) {
+            assertNotNull(archivo);
+            var plantilla = JasperCompileManager.compileReport(archivo);
+            var parametros = new java.util.HashMap<String, Object>();
+            parametros.put("PERIODO", "Inicio al Actualidad");
+            parametros.put("ESTADO_FILTRO", "TODOS");
+            parametros.put("FECHA_GENERACION", "23/11/2026 10:00");
+            parametros.put("TOTAL_TICKETS", 14);
+            parametros.put("FINALIZADOS", 7);
+            parametros.put("PENDIENTES", 7);
+            parametros.put("EN_PROCESO", 0);
+            parametros.put("RESUELTOS", 7);
+            parametros.put("CERRADOS", 0);
+            parametros.put("TASA_RESOLUCION", "50%");
+            parametros.put("CATEGORIA_PRINCIPAL", "Hardware");
+            parametros.put("CATEGORIA_PRINCIPAL_TOTAL", 6);
+            parametros.put("MOVIMIENTOS", "12");
+            parametros.put("CAMBIOS_ESTADO", "10");
+            parametros.put("CAMBIOS_TECNICO", "2");
+            parametros.put("NOTA_HISTORIAL", "Movimientos filtrados por fecha del evento.");
+            var documento = JasperFillManager.fillReport(plantilla, parametros,
+                    new JREmptyDataSource(1));
+            assertFalse(documento.getPages().isEmpty());
+            assertTrue(ReporteService.crearVistaPrevia(documento).contains("Informe general"));
+            Path muestra = Path.of("target", "reporte-general-muestra.pdf");
+            Files.createDirectories(muestra.getParent());
+            Files.write(muestra, JasperExportManager.exportReportToPdf(documento));
+            assertTrue(Files.size(muestra) > 1000);
+        }
+    }
+
+    @Test
     void estadisticasProduceVistaPreviaYPdf() throws Exception {
         try (InputStream archivo = getClass().getResourceAsStream("/reports/reporte_estadisticas.jrxml")) {
             assertNotNull(archivo);

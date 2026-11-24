@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport name="reporte_general" language="java"
+              pageWidth="842" pageHeight="595" orientation="Landscape"
+              columnWidth="792" leftMargin="25" rightMargin="25"
+              topMargin="25" bottomMargin="25" whenNoDataType="AllSectionsNoDetail">
+    <style name="Base" default="true" fontName="DejaVu Sans" fontSize="9" forecolor="#243247"/>
+
+    <parameter name="PERIODO" class="java.lang.String"/>
+    <parameter name="ESTADO_FILTRO" class="java.lang.String"/>
+    <parameter name="FECHA_GENERACION" class="java.lang.String"/>
+    <parameter name="TOTAL_TICKETS" class="java.lang.Integer"/>
+    <parameter name="FINALIZADOS" class="java.lang.Integer"/>
+    <parameter name="PENDIENTES" class="java.lang.Integer"/>
+    <parameter name="EN_PROCESO" class="java.lang.Integer"/>
+    <parameter name="RESUELTOS" class="java.lang.Integer"/>
+    <parameter name="CERRADOS" class="java.lang.Integer"/>
+    <parameter name="TASA_RESOLUCION" class="java.lang.String"/>
+    <parameter name="CATEGORIA_PRINCIPAL" class="java.lang.String"/>
+    <parameter name="CATEGORIA_PRINCIPAL_TOTAL" class="java.lang.Integer"/>
+    <parameter name="MOVIMIENTOS" class="java.lang.String"/>
+    <parameter name="CAMBIOS_ESTADO" class="java.lang.String"/>
+    <parameter name="CAMBIOS_TECNICO" class="java.lang.String"/>
+    <parameter name="NOTA_HISTORIAL" class="java.lang.String"/>
+
+    <title height="505">
+        <element kind="line" x="0" y="0" width="792" height="1"><pen lineWidth="3" lineColor="#765CAF"/></element>
+        <element kind="staticText" x="0" y="12" width="500" height="16" fontSize="9" bold="true" forecolor="#765CAF"><text><![CDATA[NAUTATICKET  /  INFORMES]]></text></element>
+        <element kind="textField" x="540" y="12" width="252" height="15" hTextAlign="Right" fontSize="8" forecolor="#667487"><expression><![CDATA["Generado: " + $P{FECHA_GENERACION}]]></expression></element>
+        <element kind="staticText" x="0" y="36" width="792" height="34" fontSize="24" bold="true" forecolor="#172B42"><text><![CDATA[Informe general]]></text></element>
+        <element kind="staticText" x="0" y="75" width="792" height="20" fontSize="10" forecolor="#536478"><text><![CDATA[Panorama de tickets, indicadores y actividad registrada]]></text></element>
+        <element kind="textField" x="0" y="104" width="792" height="17" fontSize="9" forecolor="#536478"><expression><![CDATA["Período: " + $P{PERIODO} + "     Estado: " + $P{ESTADO_FILTRO}]]></expression></element>
+        <element kind="line" x="0" y="130" width="792" height="1"><pen lineWidth="0.8" lineColor="#DAE1EA"/></element>
+
+        <element kind="staticText" x="0" y="145" width="180" height="16" fontSize="9" bold="true" forecolor="#647186"><text><![CDATA[TICKETS]]></text></element>
+        <element kind="textField" x="0" y="165" width="180" height="36" fontSize="25" bold="true" forecolor="#172B42"><expression><![CDATA[String.valueOf($P{TOTAL_TICKETS})]]></expression></element>
+        <element kind="staticText" x="0" y="204" width="180" height="15" fontSize="8" forecolor="#667487"><text><![CDATA[Visibles para este usuario]]></text></element>
+
+        <element kind="staticText" x="202" y="145" width="180" height="16" fontSize="9" bold="true" forecolor="#647186"><text><![CDATA[FINALIZADOS]]></text></element>
+        <element kind="textField" x="202" y="165" width="180" height="36" fontSize="25" bold="true" forecolor="#167C73"><expression><![CDATA[String.valueOf($P{FINALIZADOS})]]></expression></element>
+        <element kind="staticText" x="202" y="204" width="180" height="15" fontSize="8" forecolor="#667487"><text><![CDATA[Resueltos y cerrados]]></text></element>
+
+        <element kind="staticText" x="404" y="145" width="180" height="16" fontSize="9" bold="true" forecolor="#647186"><text><![CDATA[MOVIMIENTOS]]></text></element>
+        <element kind="textField" x="404" y="165" width="180" height="36" fontSize="25" bold="true" forecolor="#765CAF"><expression><![CDATA[$P{MOVIMIENTOS}]]></expression></element>
+        <element kind="staticText" x="404" y="204" width="180" height="15" fontSize="8" forecolor="#667487"><text><![CDATA[Eventos del historial]]></text></element>
+
+        <element kind="staticText" x="606" y="145" width="186" height="16" fontSize="9" bold="true" forecolor="#647186"><text><![CDATA[TASA DE FINALIZACIÓN]]></text></element>
+        <element kind="textField" x="606" y="165" width="186" height="36" fontSize="25" bold="true" forecolor="#315F95"><expression><![CDATA[$P{TASA_RESOLUCION}]]></expression></element>
+        <element kind="staticText" x="606" y="204" width="186" height="15" fontSize="8" forecolor="#667487"><text><![CDATA[Finalizados / tickets]]></text></element>
+
+        <element kind="line" x="0" y="231" width="792" height="1"><pen lineWidth="0.8" lineColor="#DAE1EA"/></element>
+        <element kind="staticText" x="0" y="246" width="360" height="22" fontSize="13" bold="true" forecolor="#172B42"><text><![CDATA[Distribución de tickets]]></text></element>
+        <element kind="staticText" x="420" y="246" width="372" height="22" fontSize="13" bold="true" forecolor="#172B42"><text><![CDATA[Actividad del historial]]></text></element>
+
+        <element kind="staticText" x="0" y="282" width="210" height="17" forecolor="#805D16"><text><![CDATA[Pendientes]]></text></element>
+        <element kind="textField" x="280" y="282" width="85" height="17" bold="true" hTextAlign="Right"><expression><![CDATA[String.valueOf($P{PENDIENTES})]]></expression></element>
+        <element kind="staticText" x="0" y="308" width="210" height="17" forecolor="#275887"><text><![CDATA[En proceso]]></text></element>
+        <element kind="textField" x="280" y="308" width="85" height="17" bold="true" hTextAlign="Right"><expression><![CDATA[String.valueOf($P{EN_PROCESO})]]></expression></element>
+        <element kind="staticText" x="0" y="334" width="210" height="17" forecolor="#126D59"><text><![CDATA[Resueltos]]></text></element>
+        <element kind="textField" x="280" y="334" width="85" height="17" bold="true" hTextAlign="Right"><expression><![CDATA[String.valueOf($P{RESUELTOS})]]></expression></element>
+        <element kind="staticText" x="0" y="360" width="210" height="17" forecolor="#5D4A87"><text><![CDATA[Cerrados]]></text></element>
+        <element kind="textField" x="280" y="360" width="85" height="17" bold="true" hTextAlign="Right"><expression><![CDATA[String.valueOf($P{CERRADOS})]]></expression></element>
+
+        <element kind="staticText" x="420" y="282" width="250" height="17"><text><![CDATA[Cambios de estado]]></text></element>
+        <element kind="textField" x="707" y="282" width="85" height="17" bold="true" hTextAlign="Right"><expression><![CDATA[$P{CAMBIOS_ESTADO}]]></expression></element>
+        <element kind="staticText" x="420" y="308" width="250" height="17"><text><![CDATA[Cambios de técnico]]></text></element>
+        <element kind="textField" x="707" y="308" width="85" height="17" bold="true" hTextAlign="Right"><expression><![CDATA[$P{CAMBIOS_TECNICO}]]></expression></element>
+        <element kind="textField" x="420" y="348" width="372" height="35" fontSize="8" forecolor="#667487" textAdjust="StretchHeight"><expression><![CDATA[$P{NOTA_HISTORIAL}]]></expression></element>
+
+        <element kind="line" x="0" y="396" width="792" height="1"><pen lineWidth="0.8" lineColor="#DAE1EA"/></element>
+        <element kind="staticText" x="0" y="414" width="370" height="18" fontSize="9" bold="true" forecolor="#647186"><text><![CDATA[CATEGORÍA MÁS FRECUENTE]]></text></element>
+        <element kind="textField" x="0" y="438" width="360" height="26" fontSize="16" bold="true" forecolor="#172B42" textAdjust="ScaleFont"><expression><![CDATA[$P{CATEGORIA_PRINCIPAL}]]></expression></element>
+        <element kind="textField" x="0" y="468" width="360" height="15" fontSize="8" forecolor="#667487"><expression><![CDATA["Tickets en esta categoría: " + $P{CATEGORIA_PRINCIPAL_TOTAL}]]></expression></element>
+        <element kind="staticText" x="420" y="414" width="372" height="18" fontSize="9" bold="true" forecolor="#647186"><text><![CDATA[LECTURA DEL INFORME]]></text></element>
+        <element kind="staticText" x="420" y="438" width="372" height="45" fontSize="9" forecolor="#536478"><text><![CDATA[Este documento resume los informes de Tickets, Historial y Gráficos. Consulta cada uno para ver su detalle.]]></text></element>
+    </title>
+
+    <pageFooter height="25">
+        <element kind="staticText" x="0" y="5" width="620" height="15" fontSize="8" forecolor="#8290A1"><text><![CDATA[NAUTATICKET · Resumen general de soporte TI]]></text></element>
+        <element kind="textField" x="690" y="5" width="102" height="15" fontSize="8" hTextAlign="Right" forecolor="#8290A1"><expression><![CDATA["Página " + $V{PAGE_NUMBER}]]></expression></element>
+    </pageFooter>
+</jasperReport>
