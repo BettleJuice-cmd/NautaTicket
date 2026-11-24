@@ -1,17 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport
-        name="reporte_tickets"
-        language="java"
-        pageWidth="842"
-        pageHeight="595"
-        orientation="Landscape"
-        columnWidth="792"
-        leftMargin="25"
-        rightMargin="25"
-        topMargin="25"
-        bottomMargin="25"
-        whenNoDataType="NoDataSection">
-
+<jasperReport name="reporte_tickets" language="java" pageWidth="595" pageHeight="842" orientation="Portrait" columnWidth="535" leftMargin="30" rightMargin="30" topMargin="24" bottomMargin="24" whenNoDataType="AllSectionsNoDetail">
     <parameter name="FECHA_DESDE" class="java.time.LocalDate"/>
     <parameter name="FECHA_HASTA" class="java.time.LocalDate"/>
     <parameter name="ESTADO_FILTRO" class="java.lang.String"/>
@@ -19,7 +7,8 @@
     <parameter name="TOTAL_TICKETS" class="java.lang.Integer"/>
     <parameter name="TOTALES_ESTADO" class="java.util.Map"/>
     <parameter name="SIN_RESULTADOS" class="java.lang.Boolean"/>
-
+    <parameter name="CATEGORIAS_DISTINTAS" class="java.lang.Integer"/>
+    <parameter name="CATEGORIA_PRINCIPAL" class="java.lang.String"/>
     <field name="idTicket" class="java.lang.Integer"/>
     <field name="departamento" class="java.lang.String"/>
     <field name="titulo" class="java.lang.String"/>
@@ -29,264 +18,121 @@
     <field name="fechaCreacion" class="java.time.LocalDateTime"/>
     <field name="fechaResolucion" class="java.time.LocalDateTime"/>
 
-    <title height="90">
-
-        <element kind="rectangle"
-                 x="0" y="0" width="792" height="53"
-                 backcolor="#213A5C" mode="Opaque"/>
-
-        <element kind="staticText"
-                 x="15" y="8" width="760" height="23"
-                 fontSize="18" bold="true"
-                 forecolor="#FFFFFF">
-            <text><![CDATA[NAUTATICKET]]></text>
-        </element>
-
-        <element kind="staticText"
-                 x="15" y="32" width="760" height="16"
-                 fontSize="10" forecolor="#FFFFFF">
-            <text><![CDATA[Reporte General de Tickets de Soporte TI]]></text>
-        </element>
-
-        <element kind="textField"
-                 x="0" y="60" width="792" height="15"
-                 fontSize="9">
-            <expression><![CDATA[
-                "Período: " +
-                ($P{FECHA_DESDE} == null ? "Inicio" : $P{FECHA_DESDE}.toString()) +
-                " al " +
-                ($P{FECHA_HASTA} == null ? "Actualidad" : $P{FECHA_HASTA}.toString()) +
-                "     Estado: " + $P{ESTADO_FILTRO}
-            ]]></expression>
-        </element>
-
-        <element kind="textField"
-                 x="0" y="76" width="792" height="12"
-                 fontSize="8" forecolor="#666666">
-            <expression><![CDATA[
-                "Generado: " + $P{FECHA_GENERACION}.toString().replace('T', ' ')
-            ]]></expression>
-        </element>
-
+    <title height="486">
+<element kind="rectangle" x="0" y="1" width="535" height="2" backcolor="#172B5A" mode="Opaque" />
+<element kind="rectangle" x="0" y="16" width="535" height="50" backcolor="#98A5C3" mode="Opaque" />
+<element kind="staticText" x="23" y="24" width="490" height="32" fontSize="22" forecolor="#182B5C" bold="true"><text><![CDATA[INFORME DE TICKETS]]></text></element>
+<element kind="staticText" x="22" y="84" width="475" height="14" fontSize="9" forecolor="#5C6D95" bold="true"><text><![CDATA[NAUTATICKET  /  GESTIÓN DE SOLICITUDES]]></text></element>
+<element kind="staticText" x="22" y="115" width="491" height="24" fontSize="16" forecolor="#66718B" bold="true" italic="true"><text><![CDATA[Una mirada al servicio de soporte]]></text></element>
+<element kind="staticText" x="22" y="148" width="491" height="15" fontSize="10" forecolor="#28324A"><text><![CDATA[Panorama de las incidencias registradas, su situación actual y la]]></text></element>
+<element kind="staticText" x="22" y="164" width="491" height="15" fontSize="10" forecolor="#28324A"><text><![CDATA[distribución de atención por parte del equipo de TI.]]></text></element>
+<element kind="line" x="22" y="196" width="491" height="1"><pen lineWidth="0.5" lineColor="#ABB3C7"/></element>
+<element kind="staticText" x="22" y="208" width="90" height="14" fontSize="8" forecolor="#69738E" bold="true"><text><![CDATA[PERÍODO]]></text></element>
+<element kind="textField" x="22" y="225" width="245" height="18" fontSize="10" forecolor="#192A57" bold="true"><expression><![CDATA[($P{FECHA_DESDE} == null ? "Sin inicio" : $P{FECHA_DESDE}.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))) + " — " + ($P{FECHA_HASTA} == null ? "Actualidad" : $P{FECHA_HASTA}.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")))]]></expression></element>
+<element kind="staticText" x="286" y="208" width="80" height="14" fontSize="8" forecolor="#69738E" bold="true"><text><![CDATA[ESTADO]]></text></element>
+<element kind="textField" x="286" y="225" width="210" height="18" fontSize="10" forecolor="#192A57" bold="true"><expression><![CDATA[$P{ESTADO_FILTRO} == null ? "TODOS" : $P{ESTADO_FILTRO}]]></expression></element>
+<element kind="staticText" x="22" y="265" width="480" height="24" fontSize="15" forecolor="#66718B" bold="true" italic="true"><text><![CDATA[Distribución actual de tickets]]></text></element>
+<element kind="staticText" x="22" y="291" width="490" height="15" fontSize="9" forecolor="#69738E"><text><![CDATA[Cantidad y proporción por estado sobre el total de solicitudes filtradas.]]></text></element>
+<element kind="staticText" x="22" y="321" width="112" height="16" fontSize="10" forecolor="#2F3955"><text><![CDATA[Pendientes]]></text></element>
+<element kind="rectangle" x="145" y="322" width="226" height="13" backcolor="#EBEEF4" mode="Opaque" />
+<element kind="rectangle" x="147" y="323" width="16" height="11" backcolor="#182C64" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 1]]></printWhenExpression></element>
+<element kind="rectangle" x="165" y="323" width="16" height="11" backcolor="#182C64" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 2]]></printWhenExpression></element>
+<element kind="rectangle" x="184" y="323" width="16" height="11" backcolor="#182C64" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 3]]></printWhenExpression></element>
+<element kind="rectangle" x="202" y="323" width="16" height="11" backcolor="#182C64" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 4]]></printWhenExpression></element>
+<element kind="rectangle" x="221" y="323" width="16" height="11" backcolor="#182C64" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 5]]></printWhenExpression></element>
+<element kind="rectangle" x="239" y="323" width="16" height="11" backcolor="#182C64" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 6]]></printWhenExpression></element>
+<element kind="rectangle" x="258" y="323" width="16" height="11" backcolor="#182C64" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 7]]></printWhenExpression></element>
+<element kind="rectangle" x="276" y="323" width="16" height="11" backcolor="#182C64" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 8]]></printWhenExpression></element>
+<element kind="rectangle" x="295" y="323" width="16" height="11" backcolor="#182C64" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 9]]></printWhenExpression></element>
+<element kind="rectangle" x="313" y="323" width="16" height="11" backcolor="#182C64" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 10]]></printWhenExpression></element>
+<element kind="rectangle" x="332" y="323" width="16" height="11" backcolor="#182C64" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 11]]></printWhenExpression></element>
+<element kind="rectangle" x="350" y="323" width="16" height="11" backcolor="#182C64" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 12]]></printWhenExpression></element>
+<element kind="textField" x="385" y="321" width="40" height="16" fontSize="10" forecolor="#182B5C" bold="true" hTextAlign="Right"><expression><![CDATA[String.valueOf($P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L))]]></expression></element>
+<element kind="textField" x="434" y="321" width="75" height="16" fontSize="10" forecolor="#69738E" hTextAlign="Right"><expression><![CDATA[$P{TOTAL_TICKETS} == 0 ? "0%" : String.valueOf(Math.round(((Number)$P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L)).doubleValue() * 100.0 / $P{TOTAL_TICKETS})) + "%"]]></expression></element>
+<element kind="staticText" x="22" y="352" width="112" height="16" fontSize="10" forecolor="#2F3955"><text><![CDATA[En proceso]]></text></element>
+<element kind="rectangle" x="145" y="353" width="226" height="13" backcolor="#EBEEF4" mode="Opaque" />
+<element kind="rectangle" x="147" y="354" width="16" height="11" backcolor="#596B9A" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 1]]></printWhenExpression></element>
+<element kind="rectangle" x="165" y="354" width="16" height="11" backcolor="#596B9A" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 2]]></printWhenExpression></element>
+<element kind="rectangle" x="184" y="354" width="16" height="11" backcolor="#596B9A" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 3]]></printWhenExpression></element>
+<element kind="rectangle" x="202" y="354" width="16" height="11" backcolor="#596B9A" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 4]]></printWhenExpression></element>
+<element kind="rectangle" x="221" y="354" width="16" height="11" backcolor="#596B9A" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 5]]></printWhenExpression></element>
+<element kind="rectangle" x="239" y="354" width="16" height="11" backcolor="#596B9A" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 6]]></printWhenExpression></element>
+<element kind="rectangle" x="258" y="354" width="16" height="11" backcolor="#596B9A" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 7]]></printWhenExpression></element>
+<element kind="rectangle" x="276" y="354" width="16" height="11" backcolor="#596B9A" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 8]]></printWhenExpression></element>
+<element kind="rectangle" x="295" y="354" width="16" height="11" backcolor="#596B9A" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 9]]></printWhenExpression></element>
+<element kind="rectangle" x="313" y="354" width="16" height="11" backcolor="#596B9A" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 10]]></printWhenExpression></element>
+<element kind="rectangle" x="332" y="354" width="16" height="11" backcolor="#596B9A" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 11]]></printWhenExpression></element>
+<element kind="rectangle" x="350" y="354" width="16" height="11" backcolor="#596B9A" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 12]]></printWhenExpression></element>
+<element kind="textField" x="385" y="352" width="40" height="16" fontSize="10" forecolor="#182B5C" bold="true" hTextAlign="Right"><expression><![CDATA[String.valueOf($P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L))]]></expression></element>
+<element kind="textField" x="434" y="352" width="75" height="16" fontSize="10" forecolor="#69738E" hTextAlign="Right"><expression><![CDATA[$P{TOTAL_TICKETS} == 0 ? "0%" : String.valueOf(Math.round(((Number)$P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L)).doubleValue() * 100.0 / $P{TOTAL_TICKETS})) + "%"]]></expression></element>
+<element kind="staticText" x="22" y="383" width="112" height="16" fontSize="10" forecolor="#2F3955"><text><![CDATA[Resueltos]]></text></element>
+<element kind="rectangle" x="145" y="384" width="226" height="13" backcolor="#EBEEF4" mode="Opaque" />
+<element kind="rectangle" x="147" y="385" width="16" height="11" backcolor="#8C98B4" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 1]]></printWhenExpression></element>
+<element kind="rectangle" x="165" y="385" width="16" height="11" backcolor="#8C98B4" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 2]]></printWhenExpression></element>
+<element kind="rectangle" x="184" y="385" width="16" height="11" backcolor="#8C98B4" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 3]]></printWhenExpression></element>
+<element kind="rectangle" x="202" y="385" width="16" height="11" backcolor="#8C98B4" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 4]]></printWhenExpression></element>
+<element kind="rectangle" x="221" y="385" width="16" height="11" backcolor="#8C98B4" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 5]]></printWhenExpression></element>
+<element kind="rectangle" x="239" y="385" width="16" height="11" backcolor="#8C98B4" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 6]]></printWhenExpression></element>
+<element kind="rectangle" x="258" y="385" width="16" height="11" backcolor="#8C98B4" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 7]]></printWhenExpression></element>
+<element kind="rectangle" x="276" y="385" width="16" height="11" backcolor="#8C98B4" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 8]]></printWhenExpression></element>
+<element kind="rectangle" x="295" y="385" width="16" height="11" backcolor="#8C98B4" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 9]]></printWhenExpression></element>
+<element kind="rectangle" x="313" y="385" width="16" height="11" backcolor="#8C98B4" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 10]]></printWhenExpression></element>
+<element kind="rectangle" x="332" y="385" width="16" height="11" backcolor="#8C98B4" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 11]]></printWhenExpression></element>
+<element kind="rectangle" x="350" y="385" width="16" height="11" backcolor="#8C98B4" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 12]]></printWhenExpression></element>
+<element kind="textField" x="385" y="383" width="40" height="16" fontSize="10" forecolor="#182B5C" bold="true" hTextAlign="Right"><expression><![CDATA[String.valueOf($P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L))]]></expression></element>
+<element kind="textField" x="434" y="383" width="75" height="16" fontSize="10" forecolor="#69738E" hTextAlign="Right"><expression><![CDATA[$P{TOTAL_TICKETS} == 0 ? "0%" : String.valueOf(Math.round(((Number)$P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L)).doubleValue() * 100.0 / $P{TOTAL_TICKETS})) + "%"]]></expression></element>
+<element kind="staticText" x="22" y="414" width="112" height="16" fontSize="10" forecolor="#2F3955"><text><![CDATA[Cerrados]]></text></element>
+<element kind="rectangle" x="145" y="415" width="226" height="13" backcolor="#EBEEF4" mode="Opaque" />
+<element kind="rectangle" x="147" y="416" width="16" height="11" backcolor="#B3BCD2" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 1]]></printWhenExpression></element>
+<element kind="rectangle" x="165" y="416" width="16" height="11" backcolor="#B3BCD2" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 2]]></printWhenExpression></element>
+<element kind="rectangle" x="184" y="416" width="16" height="11" backcolor="#B3BCD2" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 3]]></printWhenExpression></element>
+<element kind="rectangle" x="202" y="416" width="16" height="11" backcolor="#B3BCD2" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 4]]></printWhenExpression></element>
+<element kind="rectangle" x="221" y="416" width="16" height="11" backcolor="#B3BCD2" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 5]]></printWhenExpression></element>
+<element kind="rectangle" x="239" y="416" width="16" height="11" backcolor="#B3BCD2" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 6]]></printWhenExpression></element>
+<element kind="rectangle" x="258" y="416" width="16" height="11" backcolor="#B3BCD2" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 7]]></printWhenExpression></element>
+<element kind="rectangle" x="276" y="416" width="16" height="11" backcolor="#B3BCD2" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 8]]></printWhenExpression></element>
+<element kind="rectangle" x="295" y="416" width="16" height="11" backcolor="#B3BCD2" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 9]]></printWhenExpression></element>
+<element kind="rectangle" x="313" y="416" width="16" height="11" backcolor="#B3BCD2" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 10]]></printWhenExpression></element>
+<element kind="rectangle" x="332" y="416" width="16" height="11" backcolor="#B3BCD2" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 11]]></printWhenExpression></element>
+<element kind="rectangle" x="350" y="416" width="16" height="11" backcolor="#B3BCD2" mode="Opaque"><printWhenExpression><![CDATA[$P{TOTAL_TICKETS} > 0 && ((Number)$P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L)).doubleValue() * 12 >= $P{TOTAL_TICKETS} * 12]]></printWhenExpression></element>
+<element kind="textField" x="385" y="414" width="40" height="16" fontSize="10" forecolor="#182B5C" bold="true" hTextAlign="Right"><expression><![CDATA[String.valueOf($P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L))]]></expression></element>
+<element kind="textField" x="434" y="414" width="75" height="16" fontSize="10" forecolor="#69738E" hTextAlign="Right"><expression><![CDATA[$P{TOTAL_TICKETS} == 0 ? "0%" : String.valueOf(Math.round(((Number)$P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L)).doubleValue() * 100.0 / $P{TOTAL_TICKETS})) + "%"]]></expression></element>
+<element kind="rectangle" x="22" y="451" width="490" height="31" backcolor="#E8EBF4" mode="Opaque" />
+<element kind="staticText" x="32" y="458" width="47" height="12" fontSize="8" forecolor="#566789" bold="true"><text><![CDATA[TOTAL]]></text></element>
+<element kind="textField" x="79" y="456" width="45" height="18" fontSize="13" forecolor="#142B66" bold="true"><expression><![CDATA[String.valueOf($P{TOTAL_TICKETS})]]></expression></element>
+<element kind="staticText" x="151" y="458" width="95" height="12" fontSize="8" forecolor="#566789" bold="true"><text><![CDATA[CATEGORÍAS]]></text></element>
+<element kind="textField" x="242" y="456" width="33" height="18" fontSize="13" forecolor="#142B66" bold="true"><expression><![CDATA[String.valueOf($P{CATEGORIAS_DISTINTAS})]]></expression></element>
+<element kind="staticText" x="307" y="458" width="111" height="12" fontSize="8" forecolor="#566789" bold="true"><text><![CDATA[MÁS FRECUENTE]]></text></element>
+<element kind="textField" x="410" y="457" width="97" height="17" fontSize="9" forecolor="#142B66" bold="true"><expression><![CDATA[$P{CATEGORIA_PRINCIPAL} == null ? "Sin datos" : $P{CATEGORIA_PRINCIPAL}]]></expression></element>
     </title>
-
-    <columnHeader height="30">
-
-        <element kind="rectangle"
-                 x="0" y="0" width="792" height="28"
-                 backcolor="#DDE6F2" mode="Opaque"/>
-
-        <element kind="staticText" x="2" y="7" width="35" height="16" bold="true" fontSize="8">
-            <text><![CDATA[ID]]></text>
-        </element>
-
-        <element kind="staticText" x="40" y="7" width="90" height="16" bold="true" fontSize="8">
-            <text><![CDATA[Departamento]]></text>
-        </element>
-
-        <element kind="staticText" x="132" y="7" width="142" height="16" bold="true" fontSize="8">
-            <text><![CDATA[Incidencia]]></text>
-        </element>
-
-        <element kind="staticText" x="276" y="7" width="90" height="16" bold="true" fontSize="8">
-            <text><![CDATA[Categoría]]></text>
-        </element>
-
-        <element kind="staticText" x="368" y="7" width="120" height="16" bold="true" fontSize="8">
-            <text><![CDATA[Técnico]]></text>
-        </element>
-
-        <element kind="staticText" x="490" y="7" width="75" height="16" bold="true" fontSize="8">
-            <text><![CDATA[Estado]]></text>
-        </element>
-
-        <element kind="staticText" x="567" y="7" width="100" height="16" bold="true" fontSize="8">
-            <text><![CDATA[Creación]]></text>
-        </element>
-
-        <element kind="staticText" x="669" y="7" width="120" height="16" bold="true" fontSize="8">
-            <text><![CDATA[Resolución]]></text>
-        </element>
-
+    <columnHeader height="57">
+<element kind="staticText" x="15" y="2" width="500" height="20" fontSize="13" forecolor="#172B5A" bold="true"><text><![CDATA[REGISTRO DETALLADO DE SOLICITUDES]]></text></element>
+<element kind="staticText" x="15" y="22" width="505" height="14" fontSize="9" forecolor="#69738E"><text><![CDATA[Información obtenida de los tickets que cumplen los filtros seleccionados.]]></text></element>
+<element kind="line" x="15" y="49" width="505" height="1"><pen lineWidth="0.5" lineColor="#9BA7C0"/></element>
     </columnHeader>
-
-    <detail>
-        <band height="32" splitType="Prevent">
-
-            <element kind="textField"
-                     x="2" y="5" width="35" height="22"
-                     fontSize="8">
-                <expression><![CDATA[$F{idTicket}]]></expression>
-            </element>
-
-            <element kind="textField"
-                     x="40" y="5" width="90" height="22"
-                     fontSize="8" textAdjust="StretchHeight">
-                <expression><![CDATA[$F{departamento}]]></expression>
-            </element>
-
-            <element kind="textField"
-                     x="132" y="5" width="142" height="22"
-                     fontSize="8" textAdjust="StretchHeight">
-                <expression><![CDATA[$F{titulo}]]></expression>
-            </element>
-
-            <element kind="textField"
-                     x="276" y="5" width="90" height="22"
-                     fontSize="8" textAdjust="StretchHeight">
-                <expression><![CDATA[$F{categoria}]]></expression>
-            </element>
-
-            <element kind="textField"
-                     x="368" y="5" width="120" height="22"
-                     fontSize="8" textAdjust="StretchHeight">
-                <expression><![CDATA[$F{tecnicoAsignado}]]></expression>
-            </element>
-
-            <element kind="textField"
-                     x="490" y="5" width="75" height="22"
-                     fontSize="8">
-                <expression><![CDATA[$F{estado}]]></expression>
-            </element>
-
-            <element kind="textField"
-                     x="567" y="5" width="100" height="22"
-                     fontSize="8">
-                <expression><![CDATA[
-                    $F{fechaCreacion} == null
-                    ? "-"
-                    : $F{fechaCreacion}.format(
-                        java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
-                    )
-                ]]></expression>
-            </element>
-
-            <element kind="textField"
-                     x="669" y="5" width="120" height="22"
-                     fontSize="8">
-                <expression><![CDATA[
-                    $F{fechaResolucion} == null
-                    ? "Sin resolver"
-                    : $F{fechaResolucion}.format(
-                        java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
-                    )
-                ]]></expression>
-            </element>
-
-            <element kind="line" positionType="FixRelativeToBottom"
-                     x="0" y="30" width="792" height="1">
-                <pen lineWidth="0.3" lineColor="#CCCCCC"/>
-            </element>
-
-        </band>
-    </detail>
-
-    <summary height="115">
-
-        <element kind="rectangle"
-                 x="0" y="5" width="792" height="105"
-                 backcolor="#F0F3F8" mode="Opaque"/>
-
-        <element kind="staticText"
-                 x="15" y="14" width="350" height="22"
-                 fontSize="13" bold="true"
-                 forecolor="#213A5C">
-            <text><![CDATA[Resumen de tickets]]></text>
-        </element>
-
-        <element kind="textField"
-                 x="15" y="40" width="300" height="18"
-                 fontSize="11" bold="true">
-            <expression><![CDATA[
-                "Total de tickets: " + $P{TOTAL_TICKETS}
-            ]]></expression>
-        </element>
-
-        <element kind="textField"
-                 x="15" y="68" width="180" height="16"
-                 fontSize="9">
-            <expression><![CDATA[
-                "Pendientes: " +
-                $P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L)
-            ]]></expression>
-        </element>
-
-        <element kind="textField"
-                 x="205" y="68" width="180" height="16"
-                 fontSize="9">
-            <expression><![CDATA[
-                "En proceso: " +
-                $P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L)
-            ]]></expression>
-        </element>
-
-        <element kind="textField"
-                 x="395" y="68" width="180" height="16"
-                 fontSize="9">
-            <expression><![CDATA[
-                "Resueltos: " +
-                $P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L)
-            ]]></expression>
-        </element>
-
-        <element kind="textField"
-                 x="585" y="68" width="180" height="16"
-                 fontSize="9">
-            <expression><![CDATA[
-                "Cerrados: " +
-                $P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L)
-            ]]></expression>
-        </element>
-
+    <detail><band height="75" splitType="Prevent">
+<element kind="rectangle" x="15" y="1" width="505" height="68" backcolor="#F6F7FA" mode="Opaque" />
+<element kind="rectangle" x="15" y="1" width="4" height="68" backcolor="#98A5C3" mode="Opaque" />
+<element kind="textField" x="27" y="11" width="46" height="17" fontSize="11" forecolor="#182B5C" bold="true"><expression><![CDATA["#" + $F{idTicket}]]></expression></element>
+<element kind="textField" x="76" y="9" width="287" height="19" fontSize="11" forecolor="#1F2944" bold="true"><expression><![CDATA[$F{titulo} == null ? "Sin título" : $F{titulo}]]></expression></element>
+<element kind="textField" x="376" y="10" width="125" height="16" fontSize="9" forecolor="#536590" bold="true" hTextAlign="Right"><expression><![CDATA[$F{estado} == null ? "SIN ESTADO" : $F{estado}]]></expression></element>
+<element kind="staticText" x="27" y="37" width="65" height="12" fontSize="8" forecolor="#75819A" bold="true"><text><![CDATA[CATEGORÍA]]></text></element>
+<element kind="textField" x="94" y="36" width="111" height="16" fontSize="9" forecolor="#28324A"><expression><![CDATA[$F{categoria} == null ? "-" : $F{categoria}]]></expression></element>
+<element kind="staticText" x="210" y="37" width="35" height="12" fontSize="8" forecolor="#75819A" bold="true"><text><![CDATA[ÁREA]]></text></element>
+<element kind="textField" x="244" y="36" width="104" height="16" fontSize="9" forecolor="#28324A"><expression><![CDATA[$F{departamento} == null ? "-" : $F{departamento}]]></expression></element>
+<element kind="staticText" x="352" y="37" width="52" height="12" fontSize="8" forecolor="#75819A" bold="true"><text><![CDATA[CREADO]]></text></element>
+<element kind="textField" x="408" y="36" width="100" height="16" fontSize="9" forecolor="#28324A"><expression><![CDATA[$F{fechaCreacion} == null ? "-" : $F{fechaCreacion}.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))]]></expression></element>
+<element kind="textField" x="27" y="53" width="284" height="14" fontSize="8" forecolor="#64708A"><expression><![CDATA["Técnico: " + ($F{tecnicoAsignado} == null || $F{tecnicoAsignado}.isBlank() ? "Sin asignar" : $F{tecnicoAsignado})]]></expression></element>
+<element kind="textField" x="316" y="53" width="192" height="14" fontSize="8" forecolor="#64708A" hTextAlign="Right"><expression><![CDATA["Resolución: " + ($F{fechaResolucion} == null ? "Pendiente" : $F{fechaResolucion}.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")))]]></expression></element>
+    </band></detail>
+    <summary height="86">
+<element kind="line" x="15" y="7" width="505" height="1"><pen lineWidth="0.5" lineColor="#B6BDD1"/></element>
+<element kind="staticText" x="22" y="19" width="480" height="17" fontSize="11" forecolor="#172B5A" bold="true"><text><![CDATA[CIERRE DEL INFORME]]></text></element>
+<element kind="textField" x="22" y="41" width="491" height="31" fontSize="9" forecolor="#3D465E" textAdjust="StretchHeight"><expression><![CDATA[$P{TOTAL_TICKETS} == 0 ? "No se encontraron tickets con los criterios seleccionados." : "Se analizaron " + $P{TOTAL_TICKETS} + " solicitudes en " + $P{CATEGORIAS_DISTINTAS} + " categorías. La categoría con más registros fue: " + $P{CATEGORIA_PRINCIPAL} + "."]]></expression></element>
     </summary>
-
-    <pageFooter height="25">
-        <element kind="textField"
-                 x="0" y="5" width="792" height="15"
-                 fontSize="8" hTextAlign="Center"
-                 forecolor="#777777">
-            <expression><![CDATA[
-                "NautaTicket - Página " + $V{PAGE_NUMBER}
-            ]]></expression>
-        </element>
+    <pageFooter height="31">
+<element kind="line" x="0" y="2" width="535" height="1"><pen lineWidth="0.5" lineColor="#172B5A"/></element>
+<element kind="staticText" x="4" y="10" width="396" height="13" fontSize="8" forecolor="#66718B" bold="true"><text><![CDATA[NAUTATICKET   •   REPORTE DEL MÓDULO DE TICKETS]]></text></element>
+<element kind="textField" x="417" y="10" width="111" height="13" fontSize="8" forecolor="#182B5C" bold="true" hTextAlign="Right"><expression><![CDATA["PÁGINA " + $V{PAGE_NUMBER}]]></expression></element>
     </pageFooter>
-
-    <noData height="135">
-
-        <element kind="staticText"
-                 x="0" y="12" width="792" height="28"
-                 fontSize="18" bold="true"
-                 hTextAlign="Center"
-                 forecolor="#213A5C">
-            <text><![CDATA[NAUTATICKET]]></text>
-        </element>
-
-        <element kind="staticText"
-                 x="0" y="48" width="792" height="28"
-                 fontSize="13" hTextAlign="Center">
-            <text><![CDATA[No se encontraron tickets para los filtros seleccionados.]]></text>
-        </element>
-
-        <element kind="textField"
-                 x="0" y="83" width="792" height="20"
-                 fontSize="10" hTextAlign="Center">
-            <expression><![CDATA[
-                "Estado: " + $P{ESTADO_FILTRO} +
-                " | Total de tickets: 0"
-            ]]></expression>
-        </element>
-
-        <element kind="textField"
-                 x="0" y="108" width="792" height="18"
-                 fontSize="9" hTextAlign="Center">
-            <expression><![CDATA[
-                "Período: " +
-                ($P{FECHA_DESDE} == null ? "Inicio" : $P{FECHA_DESDE}.toString()) +
-                " al " +
-                ($P{FECHA_HASTA} == null ? "Actualidad" : $P{FECHA_HASTA}.toString())
-            ]]></expression>
-        </element>
-
-    </noData>
-
 </jasperReport>

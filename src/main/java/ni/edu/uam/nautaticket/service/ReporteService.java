@@ -68,6 +68,22 @@ public class ReporteService {
             LocalDate fechaDesde,
             LocalDate fechaHasta,
             String estado) {
+        return prepararReporteInterno(fechaDesde, fechaHasta, estado, true);
+    }
+
+    /** Reporte independiente de Tickets, sin anexos de métricas técnicas. */
+    public JasperPrint prepararReporteTickets(
+            LocalDate fechaDesde,
+            LocalDate fechaHasta,
+            String estado) {
+        return prepararReporteInterno(fechaDesde, fechaHasta, estado, false);
+    }
+
+    private JasperPrint prepararReporteInterno(
+            LocalDate fechaDesde,
+            LocalDate fechaHasta,
+            String estado,
+            boolean incluirGraficosTecnicos) {
 
         if (fechaDesde != null && fechaHasta != null
                 && fechaDesde.isAfter(fechaHasta)) {
@@ -107,6 +123,16 @@ public class ReporteService {
         parametros.put("TOTAL_TICKETS", tickets.size());
         parametros.put("TOTALES_ESTADO", totales);
         parametros.put("SIN_RESULTADOS", tickets.isEmpty());
+        Map<String, Long> totalesCategoria = tickets.stream()
+                .collect(Collectors.groupingBy(
+                        ReporteTicketDTO::getCategoria, Collectors.counting()));
+        parametros.put("CATEGORIAS_DISTINTAS", totalesCategoria.size());
+        parametros.put("CATEGORIA_PRINCIPAL", totalesCategoria.entrySet().stream()
+                .sorted(java.util.Comparator.<Map.Entry<String, Long>>
+                        comparingLong(Map.Entry::getValue).reversed()
+                        .thenComparing(Map.Entry::getKey))
+                .map(entry -> entry.getKey() + " (" + entry.getValue() + ")")
+                .findFirst().orElse("Sin datos"));
         parametros.put("REPORT_LOCALE", Locale.forLanguageTag("es-NI"));
 
         try (InputStream plantilla =
@@ -133,7 +159,7 @@ public class ReporteService {
                             datos
                     );
 
-            if (esAdministrador()) {
+            if (incluirGraficosTecnicos && esAdministrador()) {
                 ReporteGraficosTecnicos.agregar(documento,
                         new TiempoResolucionService(sessionFactory, usuarioId).resumen(),
                         new HistorialService(sessionFactory, usuarioId)

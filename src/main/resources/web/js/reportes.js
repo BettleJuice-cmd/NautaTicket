@@ -35,6 +35,27 @@
             border-radius: 9px;
         }
 
+        .reporte-introduccion {
+            margin-bottom: 20px;
+            padding: 19px 21px;
+            background: #111016;
+            border: 1px solid #322b42;
+            border-left: 3px solid #9783db;
+            border-radius: 8px;
+        }
+        .reporte-introduccion strong {
+            display: block;
+            margin-bottom: 7px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #e8ddfa;
+        }
+        .reporte-introduccion p {
+            margin: 0;
+            color: #a6a2b0;
+            font-size: 12px;
+            line-height: 1.7;
+        }
         .reporte-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -364,12 +385,16 @@
     seccion.innerHTML = `
         <div class="page-heading">
             <div>
-                <h1>Reportes</h1>
-                <p>
-                    Genera documentos PDF con los tickets
-                    registrados en NautaTicket.
-                </p>
+                <h1>Reporte de tickets</h1>
+                <p>Consulta y documenta las solicitudes de soporte registradas.</p>
             </div>
+        </div>
+
+        <div class="reporte-introduccion">
+            <strong>Informe de gestión de tickets</strong>
+            <p>Genera un documento con ID, incidencia, categoría, departamento,
+               técnico asignado, estado, fechas y un resumen de resultados.
+               Los filtros corresponden a la fecha de creación del ticket.</p>
         </div>
 
         <form id="reporteFormulario"
@@ -472,7 +497,7 @@
                 <button id="reporteGenerar"
                         class="button button-primary"
                         type="submit">
-                    Generar vista previa
+                    Previsualizar reporte de tickets
                 </button>
 
                 <button id="reporteLimpiar"
@@ -489,11 +514,11 @@
              hidden></div>
 
         <div class="reporte-informacion">
-            <h2>Contenido del reporte</h2>
+            <h2>Contenido del informe de tickets</h2>
 
             <p id="reporteDescripcion">
-                El PDF se genera mediante JasperReports
-                utilizando los registros de PostgreSQL.
+                El PDF incluye solicitudes y un resumen por estado,
+                generados con JasperReports a partir de PostgreSQL.
             </p>
 
             <p id="reportePermisos">
@@ -801,7 +826,7 @@
 
         generarBtn.textContent = bloqueado
             ? "Generando reporte..."
-            : "Generar vista previa";
+            : "Previsualizar reporte de tickets";
 
         if (bloqueado) {
             cerrarCalendario();
@@ -824,7 +849,7 @@
         mensajeElemento.hidden = true;
 
         try {
-            puente.generarReporte(
+            puente.generarReporteTickets(
                 fechaDesde,
                 fechaHasta,
                 estado.value

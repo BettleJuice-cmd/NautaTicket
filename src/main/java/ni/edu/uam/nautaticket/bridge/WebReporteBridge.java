@@ -77,6 +77,24 @@ public class WebReporteBridge {
             String hasta,
             String estado
     ) {
+        generarReporteInterno(desde, hasta, estado, false);
+    }
+
+    /** Informe independiente del apartado Tickets. */
+    public void generarReporteTickets(
+            String desde,
+            String hasta,
+            String estado
+    ) {
+        generarReporteInterno(desde, hasta, estado, true);
+    }
+
+    private void generarReporteInterno(
+            String desde,
+            String hasta,
+            String estado,
+            boolean soloTickets
+    ) {
 
         if (!paginaAutorizada()) {
             return;
@@ -133,11 +151,9 @@ public class WebReporteBridge {
                                 usuarioId
                         );
 
-                return servicio.prepararReporte(
-                        fechaDesde,
-                        fechaHasta,
-                        estadoFiltro
-                );
+                return soloTickets
+                        ? servicio.prepararReporteTickets(fechaDesde, fechaHasta, estadoFiltro)
+                        : servicio.prepararReporte(fechaDesde, fechaHasta, estadoFiltro);
             }
         };
 
