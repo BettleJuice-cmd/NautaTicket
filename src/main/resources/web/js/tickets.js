@@ -22,6 +22,13 @@
     const estilos = document.createElement("style");
 
     estilos.textContent = `
+        .tickets-heading-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
         .tickets-toolbar {
             display: flex;
             align-items: center;
@@ -254,11 +261,20 @@
                 <h1>Gestión de tickets</h1>
                 <p>Registro, consulta y seguimiento de solicitudes.</p>
             </div>
-            <button id="ticketNuevoBtn"
-                    type="button"
-                    class="button button-primary">
-                Nuevo ticket
-            </button>
+            <div class="tickets-heading-actions">
+                <button id="ticketReporteBtn"
+                        type="button"
+                        class="button button-secondary"
+                        aria-label="Abrir reporte de tickets"
+                        hidden>
+                    Reporte de tickets
+                </button>
+                <button id="ticketNuevoBtn"
+                        type="button"
+                        class="button button-primary">
+                    Nuevo ticket
+                </button>
+            </div>
         </div>
 
         <div id="ticketsFeedback"
@@ -355,6 +371,24 @@
     const tabla = $("ticketsTabla");
     const contador = $("ticketContador");
     const feedback = $("ticketsFeedback");
+
+    // Enlaza el reporte con la navegación autorizada del panel.
+    const reporteBtn = $("ticketReporteBtn");
+    const menuReportes = document.querySelector('[data-section="reportes"]');
+    function actualizarAccesoReporte() {
+        if (!reporteBtn || !menuReportes) return;
+        const autorizado = !menuReportes.hidden &&
+            menuReportes.getAttribute("data-roles").includes("Administrador");
+        reporteBtn.hidden = !autorizado;
+        reporteBtn.style.display = autorizado ? "" : "none";
+    }
+    if (reporteBtn && menuReportes) {
+        reporteBtn.addEventListener("click", () => {
+            if (!menuReportes.hidden) menuReportes.click();
+        });
+        window.addEventListener("nautaSeccionCambiada", actualizarAccesoReporte);
+        actualizarAccesoReporte();
+    }
 
     function mensaje(texto, error = false) {
         feedback.textContent = texto;

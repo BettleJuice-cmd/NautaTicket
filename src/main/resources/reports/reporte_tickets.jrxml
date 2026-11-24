@@ -12,8 +12,6 @@
         bottomMargin="25"
         whenNoDataType="NoDataSection">
 
-    <style name="NautaBase" default="true" fontName="Segoe UI" fontSize="9" forecolor="#243247"/>
-
     <parameter name="FECHA_DESDE" class="java.time.LocalDate"/>
     <parameter name="FECHA_HASTA" class="java.time.LocalDate"/>
     <parameter name="ESTADO_FILTRO" class="java.lang.String"/>
@@ -21,7 +19,6 @@
     <parameter name="TOTAL_TICKETS" class="java.lang.Integer"/>
     <parameter name="TOTALES_ESTADO" class="java.util.Map"/>
     <parameter name="SIN_RESULTADOS" class="java.lang.Boolean"/>
-    <parameter name="TITULO_REPORTE" class="java.lang.String"/>
 
     <field name="idTicket" class="java.lang.Integer"/>
     <field name="departamento" class="java.lang.String"/>
@@ -32,42 +29,28 @@
     <field name="fechaCreacion" class="java.time.LocalDateTime"/>
     <field name="fechaResolucion" class="java.time.LocalDateTime"/>
 
-    <title height="112">
+    <title height="90">
 
         <element kind="rectangle"
-                 x="0" y="0" width="792" height="62"
-                 backcolor="#152A3D" mode="Opaque">
-            <pen lineWidth="0"/>
-        </element>
-
-        <element kind="rectangle"
-                 x="0" y="0" width="6" height="62"
-                 backcolor="#18A6A0" mode="Opaque">
-            <pen lineWidth="0"/>
-        </element>
+                 x="0" y="0" width="792" height="53"
+                 backcolor="#213A5C" mode="Opaque"/>
 
         <element kind="staticText"
-                 x="20" y="8" width="750" height="15"
-                 fontSize="9" bold="true"
-                 forecolor="#77D5D0">
+                 x="15" y="8" width="760" height="23"
+                 fontSize="18" bold="true"
+                 forecolor="#FFFFFF">
             <text><![CDATA[NAUTATICKET]]></text>
         </element>
 
-        <element kind="textField"
-                 x="20" y="26" width="750" height="28"
-                 fontSize="20" bold="true" forecolor="#FFFFFF">
-            <expression><![CDATA[$P{TITULO_REPORTE}]]></expression>
-        </element>
-
-        <element kind="rectangle"
-                 x="0" y="70" width="792" height="37"
-                 backcolor="#F1F5F8" mode="Opaque">
-            <pen lineWidth="0"/>
+        <element kind="staticText"
+                 x="15" y="32" width="760" height="16"
+                 fontSize="10" forecolor="#FFFFFF">
+            <text><![CDATA[Reporte General de Tickets de Soporte TI]]></text>
         </element>
 
         <element kind="textField"
-                 x="14" y="75" width="550" height="16"
-                 fontSize="9" bold="true" forecolor="#243247">
+                 x="0" y="60" width="792" height="15"
+                 fontSize="9">
             <expression><![CDATA[
                 "Período: " +
                 ($P{FECHA_DESDE} == null ? "Inicio" : $P{FECHA_DESDE}.toString()) +
@@ -78,29 +61,20 @@
         </element>
 
         <element kind="textField"
-                 x="14" y="92" width="760" height="13"
-                 fontSize="8" forecolor="#607083">
+                 x="0" y="76" width="792" height="12"
+                 fontSize="8" forecolor="#666666">
             <expression><![CDATA[
-                "Generado: " + $P{FECHA_GENERACION}.format(
-                    java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                "Generado: " + $P{FECHA_GENERACION}.toString().replace('T', ' ')
             ]]></expression>
-        </element>
-
-        <element kind="textField"
-                 x="570" y="77" width="204" height="16"
-                 fontSize="9" bold="true" hTextAlign="Right" forecolor="#0D7776">
-            <expression><![CDATA["Tickets: " + $P{TOTAL_TICKETS}]]></expression>
         </element>
 
     </title>
 
-    <columnHeader height="34">
+    <columnHeader height="30">
 
         <element kind="rectangle"
-                 x="0" y="0" width="792" height="32"
-                 backcolor="#E8F0F4" mode="Opaque">
-            <pen lineWidth="0"/>
-        </element>
+                 x="0" y="0" width="792" height="28"
+                 backcolor="#DDE6F2" mode="Opaque"/>
 
         <element kind="staticText" x="2" y="7" width="35" height="16" bold="true" fontSize="8">
             <text><![CDATA[ID]]></text>
@@ -137,47 +111,47 @@
     </columnHeader>
 
     <detail>
-        <band height="34" splitType="Prevent">
+        <band height="32" splitType="Prevent">
 
             <element kind="textField"
-                     x="2" y="6" width="35" height="22"
-                     fontSize="8.5" bold="true" forecolor="#0D7776">
+                     x="2" y="5" width="35" height="22"
+                     fontSize="8">
                 <expression><![CDATA[$F{idTicket}]]></expression>
             </element>
 
             <element kind="textField"
-                     x="40" y="6" width="90" height="22"
-                     fontSize="8.5" textAdjust="StretchHeight">
+                     x="40" y="5" width="90" height="22"
+                     fontSize="8" textAdjust="StretchHeight">
                 <expression><![CDATA[$F{departamento}]]></expression>
             </element>
 
             <element kind="textField"
-                     x="132" y="6" width="142" height="22"
-                     fontSize="8.5" bold="true" textAdjust="StretchHeight">
+                     x="132" y="5" width="142" height="22"
+                     fontSize="8" textAdjust="StretchHeight">
                 <expression><![CDATA[$F{titulo}]]></expression>
             </element>
 
             <element kind="textField"
-                     x="276" y="6" width="90" height="22"
-                     fontSize="8.5" textAdjust="StretchHeight">
+                     x="276" y="5" width="90" height="22"
+                     fontSize="8" textAdjust="StretchHeight">
                 <expression><![CDATA[$F{categoria}]]></expression>
             </element>
 
             <element kind="textField"
-                     x="368" y="6" width="120" height="22"
-                     fontSize="8.5" textAdjust="StretchHeight">
+                     x="368" y="5" width="120" height="22"
+                     fontSize="8" textAdjust="StretchHeight">
                 <expression><![CDATA[$F{tecnicoAsignado}]]></expression>
             </element>
 
             <element kind="textField"
-                     x="490" y="6" width="75" height="22"
-                     fontSize="8.5">
+                     x="490" y="5" width="75" height="22"
+                     fontSize="8">
                 <expression><![CDATA[$F{estado}]]></expression>
             </element>
 
             <element kind="textField"
-                     x="567" y="6" width="100" height="22"
-                     fontSize="8.5">
+                     x="567" y="5" width="100" height="22"
+                     fontSize="8">
                 <expression><![CDATA[
                     $F{fechaCreacion} == null
                     ? "-"
@@ -188,8 +162,8 @@
             </element>
 
             <element kind="textField"
-                     x="669" y="6" width="120" height="22"
-                     fontSize="8.5">
+                     x="669" y="5" width="120" height="22"
+                     fontSize="8">
                 <expression><![CDATA[
                     $F{fechaResolucion} == null
                     ? "Sin resolver"
@@ -200,44 +174,37 @@
             </element>
 
             <element kind="line" positionType="FixRelativeToBottom"
-                     x="0" y="33" width="792" height="1">
-                <pen lineWidth="0.4" lineColor="#E3E9EE"/>
+                     x="0" y="30" width="792" height="1">
+                <pen lineWidth="0.3" lineColor="#CCCCCC"/>
             </element>
 
         </band>
     </detail>
 
-    <summary height="125">
+    <summary height="115">
 
         <element kind="rectangle"
-                 x="0" y="5" width="792" height="115"
-                 backcolor="#F1F5F8" mode="Opaque">
-            <pen lineWidth="0"/>
-        </element>
+                 x="0" y="5" width="792" height="105"
+                 backcolor="#F0F3F8" mode="Opaque"/>
 
         <element kind="staticText"
-                 x="16" y="15" width="350" height="22"
-                 fontSize="14" bold="true"
-                 forecolor="#152A3D">
-            <text><![CDATA[Resumen del período]]></text>
+                 x="15" y="14" width="350" height="22"
+                 fontSize="13" bold="true"
+                 forecolor="#213A5C">
+            <text><![CDATA[Resumen de tickets]]></text>
         </element>
 
         <element kind="textField"
-                 x="16" y="39" width="300" height="20"
-                 fontSize="12" bold="true" forecolor="#0D7776">
+                 x="15" y="40" width="300" height="18"
+                 fontSize="11" bold="true">
             <expression><![CDATA[
                 "Total de tickets: " + $P{TOTAL_TICKETS}
             ]]></expression>
         </element>
 
-        <element kind="rectangle" x="15" y="71" width="180" height="30" backcolor="#FFF4DD" mode="Opaque"><pen lineWidth="0"/></element>
-        <element kind="rectangle" x="205" y="71" width="180" height="30" backcolor="#E5F1FC" mode="Opaque"><pen lineWidth="0"/></element>
-        <element kind="rectangle" x="395" y="71" width="180" height="30" backcolor="#E2F4EF" mode="Opaque"><pen lineWidth="0"/></element>
-        <element kind="rectangle" x="585" y="71" width="180" height="30" backcolor="#EEE9F8" mode="Opaque"><pen lineWidth="0"/></element>
-
         <element kind="textField"
-                 x="25" y="78" width="160" height="17"
-                 fontSize="10" bold="true" forecolor="#805D16">
+                 x="15" y="68" width="180" height="16"
+                 fontSize="9">
             <expression><![CDATA[
                 "Pendientes: " +
                 $P{TOTALES_ESTADO}.getOrDefault("PENDIENTE", 0L)
@@ -245,8 +212,8 @@
         </element>
 
         <element kind="textField"
-                 x="215" y="78" width="160" height="17"
-                 fontSize="10" bold="true" forecolor="#275887">
+                 x="205" y="68" width="180" height="16"
+                 fontSize="9">
             <expression><![CDATA[
                 "En proceso: " +
                 $P{TOTALES_ESTADO}.getOrDefault("EN_PROCESO", 0L)
@@ -254,8 +221,8 @@
         </element>
 
         <element kind="textField"
-                 x="405" y="78" width="160" height="17"
-                 fontSize="10" bold="true" forecolor="#126D59">
+                 x="395" y="68" width="180" height="16"
+                 fontSize="9">
             <expression><![CDATA[
                 "Resueltos: " +
                 $P{TOTALES_ESTADO}.getOrDefault("RESUELTO", 0L)
@@ -263,8 +230,8 @@
         </element>
 
         <element kind="textField"
-                 x="595" y="78" width="160" height="17"
-                 fontSize="10" bold="true" forecolor="#5D4A87">
+                 x="585" y="68" width="180" height="16"
+                 fontSize="9">
             <expression><![CDATA[
                 "Cerrados: " +
                 $P{TOTALES_ESTADO}.getOrDefault("CERRADO", 0L)
@@ -277,7 +244,7 @@
         <element kind="textField"
                  x="0" y="5" width="792" height="15"
                  fontSize="8" hTextAlign="Center"
-                 forecolor="#607083">
+                 forecolor="#777777">
             <expression><![CDATA[
                 "NautaTicket - Página " + $V{PAGE_NUMBER}
             ]]></expression>
@@ -286,12 +253,12 @@
 
     <noData height="135">
 
-        <element kind="textField"
+        <element kind="staticText"
                  x="0" y="12" width="792" height="28"
                  fontSize="18" bold="true"
                  hTextAlign="Center"
-                 forecolor="#152A3D">
-            <expression><![CDATA[$P{TITULO_REPORTE}]]></expression>
+                 forecolor="#213A5C">
+            <text><![CDATA[NAUTATICKET]]></text>
         </element>
 
         <element kind="staticText"
